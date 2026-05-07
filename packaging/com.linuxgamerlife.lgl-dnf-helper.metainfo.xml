@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+
+  <id>com.linuxgamerlife.lgl-dnf-helper</id>
+
+  <name>LGL DNF Helper</name>
+  <summary>Qt6 GUI for inspecting RPM packages and DNF5 dependencies</summary>
+
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+
+  <description>
+    <p>
+      LGL DNF Helper is a graphical utility for understanding installed RPM packages
+      on Fedora systems using DNF5 and RPM metadata.
+    </p>
+    <p>
+      Search for a package, command, capability, or file path, then inspect what
+      the package requires, what requires it, which files it owns, and where it
+      came from.
+    </p>
+    <p>
+      The first version is read-only and does not run the GUI as root. If DNF5
+      is not installed, the application opens in setup mode with installation
+      guidance.
+    </p>
+  </description>
+
+  <launchable type="desktop-id">lgl-dnf-helper.desktop</launchable>
+
+  <url type="homepage">https://github.com/linuxgamerlife/lgl-dnf-helper</url>
+  <url type="bugtracker">https://github.com/linuxgamerlife/lgl-dnf-helper/issues</url>
+
+  <developer id="com.linuxgamerlife">
+    <name>LinuxGamerLife</name>
+  </developer>
+
+  <categories>
+    <category>System</category>
+    <category>Settings</category>
+  </categories>
+
+  <keywords>
+    <keyword>dnf</keyword>
+    <keyword>dnf5</keyword>
+    <keyword>rpm</keyword>
+    <keyword>package</keyword>
+    <keyword>dependencies</keyword>
+    <keyword>fedora</keyword>
+    <keyword>repository</keyword>
+  </keywords>
+
+  <supports>
+    <control>pointing</control>
+    <control>keyboard</control>
+  </supports>
+
+  <requires>
+    <display_length compare="ge">640</display_length>
+  </requires>
+
+  <releases>
+    <release version="0.1.0" date="2026-05-07">
+      <description>
+        <p>Initial read-only prototype.</p>
+      </description>
+    </release>
+  </releases>
+
+  <content_rating type="oars-1.1" />
+
+</component>

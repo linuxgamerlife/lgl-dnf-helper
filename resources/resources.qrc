@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="icons/lgl-dnf-helper_icon.svg">icons/lgl-dnf-helper_icon.svg</file>
+    </qresource>
+</RCC>
