@@ -26,6 +26,7 @@ public:
 
 private slots:
     void runSearch();
+    void resetUi();
     void goBack();
     void goForward();
     void onSearchCompleted(const QList<PackageQueryResult> &results);
@@ -70,10 +71,14 @@ private:
     void populateRows(QTableWidget *table, const QList<QStringList> &rows);
     void applyRowTooltip(QTableWidget *table, int row, const QString &tooltip);
     void adjustTableRows(QTableWidget *table);
+    void markTabLoaded(const QString &key);
+    bool shouldLoadTab(const QString &key);
+    int resultIndexForTableRow(QTableWidget *table, int row) const;
     QString selectedTableText(QTableWidget *table) const;
     QString allTableText(QTableWidget *table) const;
     QString selectedDependencyLookup(QTableWidget *table) const;
     QString selectedUrl(QTableWidget *table) const;
+    QString selectedLocalPath(QTableWidget *table) const;
     static QTableWidgetItem *item(const QString &text);
 
     Dnf5CliBackend *backend = nullptr;
@@ -82,6 +87,7 @@ private:
     QWidget *centralWidget = nullptr;
     QTabWidget *mainTabs = nullptr;
     QWidget *setupTab = nullptr;
+    QWidget *overviewTab = nullptr;
 
     QLabel *statusDot = nullptr;
     QLabel *statusLabel = nullptr;
@@ -92,10 +98,12 @@ private:
     QPushButton *backBtn = nullptr;
     QPushButton *forwardBtn = nullptr;
     QPushButton *searchBtn = nullptr;
-    QPushButton *refreshBtn = nullptr;
+    QPushButton *resetBtn = nullptr;
 
-    QTableWidget *resultsTable = nullptr;
+    QTableWidget *installedResultsTable = nullptr;
+    QTableWidget *otherResultsTable = nullptr;
     QTableWidget *overviewTable = nullptr;
+    QTextEdit *descriptionBox = nullptr;
     QTableWidget *dependenciesTable = nullptr;
     QTableWidget *requiredByTable = nullptr;
     QTableWidget *filesTable = nullptr;
@@ -110,6 +118,7 @@ private:
     QString currentPackageName;
     QStringList packageHistory;
     QSet<QString> loadedTabs;
+    QSet<QString> loadingTabs;
     int packageHistoryIndex = -1;
     bool resetToOverviewOnSearchResult = false;
 };

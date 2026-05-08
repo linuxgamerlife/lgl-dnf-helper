@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <component type="desktop-application">
 
   <id>com.linuxgamerlife.lgl-dnf-helper</id>
@@ -15,9 +15,9 @@
       on Fedora systems using DNF5 and RPM metadata.
     </p>
     <p>
-      Search for a package, command, capability, or file path, then inspect what
-      the package requires, what requires it, which files it owns, and where it
-      came from.
+      Search for a package, command, capability, partial package name, or file
+      path, then inspect what the package requires, what requires it, which
+      files it owns, which config may matter, and where it came from.
     </p>
     <p>
       The first version is read-only and does not run the GUI as root. If DNF5
@@ -29,7 +29,9 @@
   <launchable type="desktop-id">lgl-dnf-helper.desktop</launchable>
 
   <url type="homepage">https://github.com/linuxgamerlife/lgl-dnf-helper</url>
-  <url type="bugtracker">https://github.com/linuxgamerlife/lgl-dnf-helper/issues</url>
+  <url
+        type="bugtracker"
+    >https://github.com/linuxgamerlife/lgl-dnf-helper/issues</url>
 
   <developer id="com.linuxgamerlife">
     <name>LinuxGamerLife</name>
@@ -60,7 +62,12 @@
   </requires>
 
   <releases>
-    <release version="0.1.0" date="2026-05-07">
+    <release version="0.0.2" date="2026-05-08">
+      <description>
+        <p>Improved reset behavior, search result grouping, fuzzy package matching, package descriptions, config discovery, and error reporting.</p>
+      </description>
+    </release>
+    <release version="0.0.1" date="2026-05-07">
       <description>
         <p>Initial read-only prototype.</p>
       </description>

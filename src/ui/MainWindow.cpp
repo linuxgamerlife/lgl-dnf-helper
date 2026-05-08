@@ -4,6 +4,8 @@
 #include <QClipboard>
 #include <QDateTime>
 #include <QDesktopServices>
+#include <QDir>
+#include <QFileInfo>
 #include <QFrame>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -60,16 +62,17 @@ void MainWindow::setupUi() {
 
     statusLabel = new QLabel("Starting");
 
-    refreshBtn = new QPushButton("↻ Refresh");
-    refreshBtn->setFixedHeight(34);
-    refreshBtn->setMinimumWidth(110);
+    resetBtn = new QPushButton("↺ Reset");
+    resetBtn->setFixedHeight(34);
+    resetBtn->setMinimumWidth(100);
+    resetBtn->setToolTip("Clear the current search, package view, navigation history, and log");
 
     headerLayout->addWidget(titleLabel);
     headerLayout->addStretch();
     headerLayout->addWidget(statusDot);
     headerLayout->addWidget(statusLabel);
     headerLayout->addSpacing(8);
-    headerLayout->addWidget(refreshBtn);
+    headerLayout->addWidget(resetBtn);
     rootLayout->addWidget(headerFrame);
 
     auto *searchRow = new QHBoxLayout;
@@ -96,21 +99,49 @@ void MainWindow::setupUi() {
     contentSplitter->setChildrenCollapsible(false);
     contentSplitter->setHandleWidth(8);
 
-    resultsTable = new QTableWidget;
-    resultsTable->setColumnCount(3);
-    resultsTable->setHorizontalHeaderLabels({"Package", "Match", "Repository"});
-    resultsTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-    resultsTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    resultsTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-    resultsTable->verticalHeader()->setVisible(false);
-    resultsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    resultsTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    resultsTable->setAlternatingRowColors(true);
-    resultsTable->setShowGrid(false);
-    resultsTable->setWordWrap(false);
-    resultsTable->verticalHeader()->setDefaultSectionSize(28);
-    resultsTable->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
-    resultsTable->setMinimumWidth(280);
+    auto *resultsWidget = new QWidget;
+    auto *resultsLayout = new QVBoxLayout(resultsWidget);
+    resultsLayout->setContentsMargins(0, 0, 0, 0);
+    resultsLayout->setSpacing(8);
+
+    auto configureResultsTable = [](QTableWidget *table) {
+        table->setColumnCount(1);
+        table->horizontalHeader()->setVisible(false);
+        table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+        table->verticalHeader()->setVisible(false);
+        table->setSelectionBehavior(QAbstractItemView::SelectRows);
+        table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+        table->setAlternatingRowColors(true);
+        table->setShowGrid(false);
+        table->setWordWrap(false);
+        table->verticalHeader()->setDefaultSectionSize(28);
+        table->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+        table->setMinimumWidth(280);
+    };
+
+    installedResultsTable = new QTableWidget;
+    otherResultsTable = new QTableWidget;
+    configureResultsTable(installedResultsTable);
+    configureResultsTable(otherResultsTable);
+    otherResultsTable->setColumnCount(3);
+    otherResultsTable->setHorizontalHeaderLabels({"Package", "Version", "Architecture"});
+    otherResultsTable->horizontalHeader()->setVisible(true);
+    otherResultsTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    otherResultsTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    otherResultsTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+
+    auto *installedGroup = new QGroupBox("Installed Packages");
+    auto *installedLayout = new QVBoxLayout(installedGroup);
+    installedLayout->setContentsMargins(6, 6, 6, 6);
+    installedLayout->addWidget(installedResultsTable);
+
+    auto *otherGroup = new QGroupBox("All Packages");
+    auto *otherLayout = new QVBoxLayout(otherGroup);
+    otherLayout->setContentsMargins(6, 6, 6, 6);
+    otherLayout->addWidget(otherResultsTable);
+
+    resultsLayout->addWidget(installedGroup, 0);
+    resultsLayout->addWidget(otherGroup, 1);
 
     auto *detailWidget = new QWidget;
     auto *detailLayout = new QVBoxLayout(detailWidget);
@@ -139,6 +170,31 @@ void MainWindow::setupUi() {
     overviewTable->setHorizontalHeaderLabels({"Field", "Value"});
     overviewTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     overviewTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+
+    descriptionBox = new QTextEdit;
+    descriptionBox->setReadOnly(true);
+    descriptionBox->setMinimumHeight(90);
+    descriptionBox->setPlaceholderText("Package description");
+
+    overviewTab = new QWidget;
+    auto *overviewLayout = new QVBoxLayout(overviewTab);
+    overviewLayout->setContentsMargins(0, 0, 0, 0);
+    overviewLayout->setSpacing(8);
+
+    auto *overviewSplitter = new QSplitter(Qt::Vertical);
+    overviewSplitter->setChildrenCollapsible(false);
+    overviewSplitter->setHandleWidth(8);
+    overviewSplitter->addWidget(overviewTable);
+
+    auto *descriptionGroup = new QGroupBox("Description");
+    auto *descriptionLayout = new QVBoxLayout(descriptionGroup);
+    descriptionLayout->setContentsMargins(8, 8, 8, 8);
+    descriptionLayout->addWidget(descriptionBox);
+    overviewSplitter->addWidget(descriptionGroup);
+    overviewSplitter->setStretchFactor(0, 1);
+    overviewSplitter->setStretchFactor(1, 0);
+    overviewSplitter->setSizes({360, 140});
+    overviewLayout->addWidget(overviewSplitter);
 
     dependenciesTable = new QTableWidget;
     dependenciesTable->setColumnCount(5);
@@ -204,7 +260,7 @@ void MainWindow::setupUi() {
     impactTable->setWordWrap(true);
     impactTable->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
-    mainTabs->addTab(overviewTable, "Overview");
+    mainTabs->addTab(overviewTab, "Overview");
     mainTabs->addTab(dependenciesTable, "Dependencies");
     mainTabs->addTab(requiredByTable, "Required By");
     mainTabs->addTab(filesTable, "Files");
@@ -217,7 +273,7 @@ void MainWindow::setupUi() {
 
     detailLayout->addWidget(mainTabs);
 
-    contentSplitter->addWidget(resultsTable);
+    contentSplitter->addWidget(resultsWidget);
     contentSplitter->addWidget(detailWidget);
     contentSplitter->setStretchFactor(0, 0);
     contentSplitter->setStretchFactor(1, 1);
@@ -243,9 +299,11 @@ void MainWindow::setupConnections() {
     connect(searchEdit, &QLineEdit::returnPressed, this, &MainWindow::runSearch);
     connect(backBtn, &QPushButton::clicked, this, &MainWindow::goBack);
     connect(forwardBtn, &QPushButton::clicked, this, &MainWindow::goForward);
-    connect(refreshBtn, &QPushButton::clicked, backend, &Dnf5CliBackend::checkTools);
-    connect(resultsTable, &QTableWidget::cellClicked, this, &MainWindow::onResultClicked);
-    connect(resultsTable, &QTableWidget::cellDoubleClicked, this, &MainWindow::onResultActivated);
+    connect(resetBtn, &QPushButton::clicked, this, &MainWindow::resetUi);
+    connect(installedResultsTable, &QTableWidget::cellClicked, this, &MainWindow::onResultClicked);
+    connect(installedResultsTable, &QTableWidget::cellDoubleClicked, this, &MainWindow::onResultActivated);
+    connect(otherResultsTable, &QTableWidget::cellClicked, this, &MainWindow::onResultClicked);
+    connect(otherResultsTable, &QTableWidget::cellDoubleClicked, this, &MainWindow::onResultActivated);
     connect(dependenciesTable, &QTableWidget::cellDoubleClicked, this, [this](int, int) {
         const QString lookup = selectedDependencyLookup(dependenciesTable);
         if (!lookup.isEmpty()) {
@@ -287,6 +345,8 @@ void MainWindow::setupConnections() {
     });
     connect(backend, &PackageBackend::commandFinished, this, [this](const QString &summary, bool ok) {
         appendLog(summary, ok ? "#00aa00" : "#ff4444");
+        if (!ok)
+            loadingTabs.clear();
         setState(ok ? "Ready" : "Error", ok ? QColor("green") : QColor("red"));
     });
     connect(backend, &PackageBackend::errorOccurred, this, [this](const QString &message) {
@@ -348,9 +408,45 @@ void MainWindow::runSearch() {
         return;
     }
     currentResults.clear();
-    resultsTable->setRowCount(0);
+    currentPackageName.clear();
+    loadedTabs.clear();
+    loadingTabs.clear();
+    installedResultsTable->setRowCount(0);
+    otherResultsTable->setRowCount(0);
+    overviewTable->setRowCount(0);
+    clearPackageTables();
+    descriptionBox->clear();
+    packageTitle->setText("No package selected");
+    packageNevra->setText("Select a package from the search results to view details.");
+    packageBadges->clear();
     resetToOverviewOnSearchResult = true;
     backend->search(query);
+}
+
+void MainWindow::resetUi() {
+    currentResults.clear();
+    currentPackageName.clear();
+    packageHistory.clear();
+    loadedTabs.clear();
+    loadingTabs.clear();
+    packageHistoryIndex = -1;
+    resetToOverviewOnSearchResult = false;
+
+    searchEdit->clear();
+    installedResultsTable->setRowCount(0);
+    otherResultsTable->setRowCount(0);
+    overviewTable->setRowCount(0);
+    clearPackageTables();
+    descriptionBox->clear();
+    logView->clear();
+
+    packageTitle->setText("No package selected");
+    packageNevra->setText("Search for an installed package to begin.");
+    packageBadges->clear();
+    updateNavigationButtons();
+    mainTabs->setCurrentWidget(overviewTab);
+    setState("Ready", QColor("green"));
+    statusBar()->showMessage("Reset");
 }
 
 void MainWindow::goBack() {
@@ -371,37 +467,60 @@ void MainWindow::goForward() {
 
 void MainWindow::onSearchCompleted(const QList<PackageQueryResult> &results) {
     currentResults = results;
-    resultsTable->setRowCount(results.size());
+    installedResultsTable->setRowCount(0);
+    otherResultsTable->setRowCount(0);
+    QSet<QString> allPackageKeys;
 
-    for (int row = 0; row < results.size(); ++row) {
-        const auto &result = results[row];
-        resultsTable->setItem(row, 0, item(result.package.id.name));
-        resultsTable->setItem(row, 1, item(matchKindLabel(result.matchKind)));
-        resultsTable->setItem(row, 2, item(result.package.repoId));
+    for (int resultIndex = 0; resultIndex < results.size(); ++resultIndex) {
+        const auto &result = results[resultIndex];
+        if (result.package.installed) {
+            const int installedRow = installedResultsTable->rowCount();
+            installedResultsTable->insertRow(installedRow);
+            auto *installedItem = item(result.package.id.name);
+            installedItem->setData(Qt::UserRole, resultIndex);
+            installedResultsTable->setItem(installedRow, 0, installedItem);
+        }
+
+        const QString allPackageKey = result.package.id.nevra();
+        if (allPackageKeys.contains(allPackageKey))
+            continue;
+        allPackageKeys.insert(allPackageKey);
+
+        const int allRow = otherResultsTable->rowCount();
+        otherResultsTable->insertRow(allRow);
+        auto *packageItem = item(result.package.id.name);
+        packageItem->setData(Qt::UserRole, resultIndex);
+        otherResultsTable->setItem(allRow, 0, packageItem);
+        otherResultsTable->setItem(allRow, 1, item(result.package.id.evr()));
+        otherResultsTable->setItem(allRow, 2, item(result.package.id.arch));
     }
 
-    adjustTableRows(resultsTable);
+    adjustTableRows(installedResultsTable);
+    adjustTableRows(otherResultsTable);
     statusBar()->showMessage(QString("%1 result(s)").arg(results.size()), 3000);
 
     if (resetToOverviewOnSearchResult) {
-        mainTabs->setCurrentWidget(overviewTable);
+        mainTabs->setCurrentWidget(overviewTab);
         resetToOverviewOnSearchResult = false;
     }
-
-    if (results.size() == 1)
-        navigateToPackage(results.first().package.id.name);
 }
 
 void MainWindow::onResultClicked(int row, int) {
-    if (row < 0 || row >= currentResults.size())
+    auto *table = qobject_cast<QTableWidget *>(sender());
+    const int resultIndex = resultIndexForTableRow(table, row);
+    if (resultIndex < 0 || resultIndex >= currentResults.size())
         return;
-    loadSelectedPackage(currentResults[row].package.id.name, false);
+    const Package &package = currentResults[resultIndex].package;
+    loadSelectedPackage(package.installed ? package.id.name : package.id.nevra(), false);
 }
 
 void MainWindow::onResultActivated(int row, int) {
-    if (row < 0 || row >= currentResults.size())
+    auto *table = qobject_cast<QTableWidget *>(sender());
+    const int resultIndex = resultIndexForTableRow(table, row);
+    if (resultIndex < 0 || resultIndex >= currentResults.size())
         return;
-    navigateToPackage(currentResults[row].package.id.name);
+    const Package &package = currentResults[resultIndex].package;
+    navigateToPackage(package.installed ? package.id.name : package.id.nevra());
 }
 
 void MainWindow::loadSelectedPackage(const QString &name, bool addToHistory) {
@@ -419,7 +538,10 @@ void MainWindow::loadSelectedPackage(const QString &name, bool addToHistory) {
 
     currentPackageName = name;
     loadedTabs.clear();
+    loadingTabs.clear();
     clearPackageTables();
+    overviewTable->setRowCount(0);
+    descriptionBox->clear();
     updateNavigationButtons();
     packageTitle->setText(name);
     packageNevra->setText("Loading package details...");
@@ -455,33 +577,31 @@ void MainWindow::loadCurrentTab() {
     QString key;
     if (tab == dependenciesTable) {
         key = "dependencies";
-        if (!loadedTabs.contains(key)) backend->loadDependencies(currentPackageName);
+        if (shouldLoadTab(key)) backend->loadDependencies(currentPackageName);
     } else if (tab == requiredByTable) {
         key = "required-by";
-        if (!loadedTabs.contains(key)) backend->loadRequiredBy(currentPackageName);
+        if (shouldLoadTab(key)) backend->loadRequiredBy(currentPackageName);
     } else if (tab == filesTable) {
         key = "files";
-        if (!loadedTabs.contains(key)) backend->loadFiles(currentPackageName);
+        if (shouldLoadTab(key)) backend->loadFiles(currentPackageName);
     } else if (tab == relatedConfigTable) {
         key = "related-config";
-        if (!loadedTabs.contains(key)) backend->loadRelatedConfig(currentPackageName);
+        if (shouldLoadTab(key)) backend->loadRelatedConfig(currentPackageName);
     } else if (tab == userConfigTable) {
         key = "config";
-        if (!loadedTabs.contains(key)) backend->loadUserConfig(currentPackageName);
+        if (shouldLoadTab(key)) backend->loadUserConfig(currentPackageName);
     } else if (tab == historyTable) {
         key = "history";
-        if (!loadedTabs.contains(key)) backend->loadHistory(currentPackageName);
+        if (shouldLoadTab(key)) backend->loadHistory(currentPackageName);
     } else if (tab == repositoryTable) {
         key = "repository";
-        if (!loadedTabs.contains(key)) backend->loadRepositoryInfo(currentPackageName);
+        if (shouldLoadTab(key)) backend->loadRepositoryInfo(currentPackageName);
     } else if (tab == impactTable) {
         key = "impact";
-        if (!loadedTabs.contains(key)) backend->loadImpact(currentPackageName);
+        if (shouldLoadTab(key)) backend->loadImpact(currentPackageName);
     } else {
         return;
     }
-
-    loadedTabs.insert(key);
 }
 
 void MainWindow::clearPackageTables() {
@@ -510,12 +630,14 @@ void MainWindow::onDependenciesLoaded(const QString &requestName, const QList<De
     if (requestName != currentPackageName)
         return;
     populateDependencyTable(dependenciesTable, dependencies);
+    markTabLoaded("dependencies");
 }
 
 void MainWindow::onRequiredByLoaded(const QString &requestName, const QList<DependencyEdge> &dependencies) {
     if (requestName != currentPackageName)
         return;
     populateDependencyTable(requiredByTable, dependencies);
+    markTabLoaded("required-by");
 }
 
 void MainWindow::onFilesLoaded(const QString &requestName, const QStringList &files) {
@@ -542,36 +664,46 @@ void MainWindow::onFilesLoaded(const QString &requestName, const QStringList &fi
         filesTable->setItem(row, 1, item(path));
     }
     adjustTableRows(filesTable);
+    markTabLoaded("files");
 }
 
 void MainWindow::onRelatedConfigLoaded(const QString &requestName, const QList<QStringList> &rows) {
     if (requestName != currentPackageName)
         return;
     populateRows(relatedConfigTable, rows);
+    markTabLoaded("related-config");
 }
 
 void MainWindow::onHistoryLoaded(const QString &requestName, const QList<QStringList> &rows) {
     if (requestName != currentPackageName)
         return;
     populateRows(historyTable, rows);
+    markTabLoaded("history");
 }
 
 void MainWindow::onRepositoryInfoLoaded(const QString &requestName, const QList<QStringList> &rows) {
     if (requestName != currentPackageName)
         return;
     populateRows(repositoryTable, rows);
+    markTabLoaded("repository");
 }
 
 void MainWindow::onImpactLoaded(const QString &requestName, const QList<QStringList> &rows) {
     if (requestName != currentPackageName)
         return;
     populateRows(impactTable, rows);
+    markTabLoaded("impact");
 }
 
 void MainWindow::onUserConfigLoaded(const QString &requestName, const QList<QStringList> &rows) {
     if (requestName != currentPackageName)
         return;
     populateRows(userConfigTable, rows);
+    if (!rows.isEmpty() && !rows.first().isEmpty() && rows.first().first() == "Error") {
+        loadingTabs.remove("config");
+        return;
+    }
+    markTabLoaded("config");
 }
 
 void MainWindow::onToolsChecked(bool dnf5Available, bool rpmAvailable) {
@@ -605,9 +737,10 @@ void MainWindow::showTableContextMenu(const QPoint &pos) {
     if (!url.isEmpty())
         openUrlAction = menu.addAction("Open URL");
 
-    QAction *inspect = nullptr;
-    if (table == dependenciesTable || table == requiredByTable)
-        inspect = menu.addAction("Inspect Selected Package/Capability");
+    QAction *openPathAction = nullptr;
+    const QString localPath = selectedLocalPath(table);
+    if (!localPath.isEmpty())
+        openPathAction = menu.addAction("Open Containing Folder");
 
     QAction *chosen = menu.exec(table->viewport()->mapToGlobal(pos));
     if (!chosen)
@@ -625,12 +758,11 @@ void MainWindow::showTableContextMenu(const QPoint &pos) {
         statusBar()->showMessage("Copied table", 2000);
     } else if (chosen == openUrlAction) {
         QDesktopServices::openUrl(QUrl(url));
-    } else if (chosen == inspect) {
-        const QString lookup = selectedDependencyLookup(table);
-        if (!lookup.isEmpty()) {
-            searchEdit->setText(lookup);
-            navigateToPackage(lookup);
-        }
+    } else if (chosen == openPathAction) {
+        const QFileInfo info(localPath);
+        const QString folder = info.isDir() ? info.absoluteFilePath() : info.absolutePath();
+        if (folder.isEmpty() || !QDesktopServices::openUrl(QUrl::fromLocalFile(folder)))
+            statusBar()->showMessage("Could not open containing folder", 4000);
     }
 }
 
@@ -671,7 +803,7 @@ void MainWindow::showAbout() {
     about.setTextInteractionFlags(Qt::TextBrowserInteraction);
     about.setText(
         "<h3>LGL DNF Helper</h3>"
-        "<p style='color:gray;'>Version 0.1.0</p>"
+        "<p style='color:gray;'>Version 0.0.2</p>"
         "<p>A Qt6 GUI for understanding installed RPM packages, DNF5 dependencies, "
         "reverse dependencies, package files, and repository origin.</p>"
         "<hr/>"
@@ -730,6 +862,9 @@ void MainWindow::populateOverview(const Package &package) {
         overviewTable->setItem(row, 1, item(rows[row].value.isEmpty() ? "—" : rows[row].value));
     }
     adjustTableRows(overviewTable);
+    descriptionBox->setPlainText(package.description.isEmpty()
+        ? (package.summary.isEmpty() ? "No description available." : package.summary)
+        : package.description);
 }
 
 void MainWindow::populateDependencyTable(QTableWidget *table, const QList<DependencyEdge> &dependencies) {
@@ -775,6 +910,33 @@ void MainWindow::adjustTableRows(QTableWidget *table) {
     table->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     for (int row = 0; row < table->rowCount(); ++row)
         table->setRowHeight(row, 28);
+}
+
+void MainWindow::markTabLoaded(const QString &key) {
+    loadingTabs.remove(key);
+    loadedTabs.insert(key);
+    if (statusLabel->text() == "Querying") {
+        setState("Ready", QColor("green"));
+        statusBar()->showMessage("Ready");
+    }
+}
+
+bool MainWindow::shouldLoadTab(const QString &key) {
+    if (loadedTabs.contains(key) || loadingTabs.contains(key))
+        return false;
+    loadingTabs.insert(key);
+    return true;
+}
+
+int MainWindow::resultIndexForTableRow(QTableWidget *table, int row) const {
+    if (!table || row < 0)
+        return -1;
+    auto *tableItem = table->item(row, 0);
+    if (!tableItem)
+        return -1;
+    bool ok = false;
+    const int resultIndex = tableItem->data(Qt::UserRole).toInt(&ok);
+    return ok ? resultIndex : -1;
 }
 
 QString MainWindow::selectedTableText(QTableWidget *table) const {
@@ -846,6 +1008,23 @@ QString MainWindow::selectedUrl(QTableWidget *table) const {
             continue;
         const QString text = tableItem->text().trimmed();
         if (text.startsWith("http://") || text.startsWith("https://"))
+            return text;
+    }
+
+    return QString();
+}
+
+QString MainWindow::selectedLocalPath(QTableWidget *table) const {
+    const int row = table->currentRow();
+    if (row < 0)
+        return QString();
+
+    for (int column = 0; column < table->columnCount(); ++column) {
+        auto *tableItem = table->item(row, column);
+        if (!tableItem)
+            continue;
+        const QString text = tableItem->text().trimmed();
+        if (text.startsWith('/') && text != "/")
             return text;
     }
 

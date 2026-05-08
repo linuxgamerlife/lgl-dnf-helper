@@ -1,5 +1,5 @@
 Name:           lgl-dnf-helper
-Version:        0.1.0
+Version:        0.0.2
 Release:        1%{?dist}
 Summary:        Qt6 GUI for inspecting RPM packages and DNF5 dependencies
 
@@ -19,7 +19,7 @@ Recommends:     polkit
 %description
 LGL DNF Helper is a Qt6 graphical utility for inspecting installed RPM
 packages, DNF5 dependency relationships, reverse dependencies, file
-ownership, and repository origin.
+ownership, related configuration, and repository origin.
 
 The initial version is read-only and does not run the GUI as root.
 
@@ -81,5 +81,8 @@ fi
 %{_datadir}/metainfo/com.linuxgamerlife.lgl-dnf-helper.metainfo.xml
 
 %changelog
-* Thu May 07 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.1.0-1
+* Fri May 08 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.0.2-1
+- Add reset action, grouped package results, fuzzy search, package descriptions, config discovery improvements, and improved tab error handling
+
+* Thu May 07 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.0.1-1
 - Initial read-only prototype

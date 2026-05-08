@@ -47,24 +47,103 @@ void Dnf5CliBackend::search(const QString &query) {
     runCommand("dnf5", {"repoquery", "--installed", "--queryformat=" + packageQueryFormat(), trimmed},
                [this, trimmed](int exitCode, const QString &out, const QString &err) {
         QList<PackageQueryResult> results;
+        QSet<QString> seenResults;
         if (exitCode == 0) {
             for (Package package : packagesFromDelimitedOutput(out)) {
+                const QString key = package.id.nevra() + "|" + package.repoId + "|installed";
+                if (seenResults.contains(key))
+                    continue;
+                seenResults.insert(key);
                 package.installed = true;
                 results << PackageQueryResult{package, PackageQueryResult::MatchKind::ExactPackage, trimmed};
             }
         }
         if (results.isEmpty()) {
-            runCommand("dnf5", {"repoquery", "--queryformat=" + packageQueryFormat(), "--whatprovides", trimmed},
-                       [this, trimmed](int providerExit, const QString &providerOut, const QString &providerErr) {
+            runCommand("dnf5", {"repoquery", "--installed", "--queryformat=" + packageQueryFormat(), "--whatprovides", trimmed},
+                       [this, trimmed](int installedProviderExit, const QString &installedProviderOut, const QString &installedProviderErr) {
                 QList<PackageQueryResult> providerResults;
-                if (providerExit == 0) {
-                    for (const Package &package : packagesFromDelimitedOutput(providerOut)) {
-                        providerResults << PackageQueryResult{package, PackageQueryResult::MatchKind::CapabilityProvider, trimmed};
+                QSet<QString> seenProviderResults;
+                if (installedProviderExit == 0) {
+                    for (Package package : packagesFromDelimitedOutput(installedProviderOut)) {
+                        package.installed = true;
+                        const auto matchKind = package.id.name == trimmed
+                            ? PackageQueryResult::MatchKind::ExactPackage
+                            : PackageQueryResult::MatchKind::CapabilityProvider;
+                        const QString key = package.id.nevra()
+                            + "|" + package.repoId
+                            + "|installed|"
+                            + QString::number(static_cast<int>(matchKind));
+                        if (seenProviderResults.contains(key))
+                            continue;
+                        seenProviderResults.insert(key);
+                        providerResults << PackageQueryResult{package, matchKind, trimmed};
                     }
-                } else if (!providerErr.trimmed().isEmpty()) {
-                    emit errorOccurred(providerErr.trimmed());
+                } else if (!installedProviderErr.trimmed().isEmpty()) {
+                    emit errorOccurred(installedProviderErr.trimmed());
                 }
-                emit searchCompleted(providerResults);
+
+                runCommand("dnf5", {"repoquery", "--available", "--queryformat=" + packageQueryFormat(), "--whatprovides", trimmed},
+                           [this, trimmed, providerResults, seenProviderResults](int providerExit, const QString &providerOut, const QString &providerErr) mutable {
+                    if (providerExit == 0) {
+                        for (Package package : packagesFromDelimitedOutput(providerOut)) {
+                            package.installed = false;
+                        const auto matchKind = package.id.name == trimmed
+                            ? PackageQueryResult::MatchKind::AvailablePackage
+                            : PackageQueryResult::MatchKind::CapabilityProvider;
+                        const QString key = package.id.nevra()
+                            + "|" + package.repoId
+                            + "|available|"
+                            + "|" + QString::number(static_cast<int>(matchKind));
+                        if (seenProviderResults.contains(key))
+                            continue;
+                        seenProviderResults.insert(key);
+                        providerResults << PackageQueryResult{package, matchKind, trimmed};
+                    }
+                    } else if (!providerErr.trimmed().isEmpty()) {
+                        emit errorOccurred(providerErr.trimmed());
+                    }
+
+                    if (!providerResults.isEmpty()) {
+                        emit searchCompleted(providerResults);
+                        return;
+                    }
+
+                    const QString fuzzyQuery = "*" + trimmed + "*";
+                    runCommand("dnf5", {"repoquery", "--installed", "--queryformat=" + packageQueryFormat(), fuzzyQuery},
+                               [this, fuzzyQuery](int fuzzyInstalledExit, const QString &fuzzyInstalledOut, const QString &fuzzyInstalledErr) {
+                        QList<PackageQueryResult> fuzzyResults;
+                        QSet<QString> seenFuzzyResults;
+                        if (fuzzyInstalledExit == 0) {
+                            for (Package package : packagesFromDelimitedOutput(fuzzyInstalledOut)) {
+                                package.installed = true;
+                                const QString key = package.id.nevra() + "|installed";
+                                if (seenFuzzyResults.contains(key))
+                                    continue;
+                                seenFuzzyResults.insert(key);
+                                fuzzyResults << PackageQueryResult{package, PackageQueryResult::MatchKind::FuzzyPackage, fuzzyQuery};
+                            }
+                        } else if (!fuzzyInstalledErr.trimmed().isEmpty()) {
+                            emit errorOccurred(fuzzyInstalledErr.trimmed());
+                        }
+
+                        runCommand("dnf5", {"repoquery", "--available", "--queryformat=" + packageQueryFormat(), fuzzyQuery},
+                                   [this, fuzzyQuery, fuzzyResults, seenFuzzyResults](int fuzzyAvailableExit, const QString &fuzzyAvailableOut, const QString &fuzzyAvailableErr) mutable {
+                            if (fuzzyAvailableExit == 0) {
+                                for (Package package : packagesFromDelimitedOutput(fuzzyAvailableOut)) {
+                                    package.installed = false;
+                                    const QString key = package.id.nevra() + "|available";
+                                    if (seenFuzzyResults.contains(key))
+                                        continue;
+                                    seenFuzzyResults.insert(key);
+                                    fuzzyResults << PackageQueryResult{package, PackageQueryResult::MatchKind::FuzzyPackage, fuzzyQuery};
+                                }
+                            } else if (!fuzzyAvailableErr.trimmed().isEmpty()) {
+                                emit errorOccurred(fuzzyAvailableErr.trimmed());
+                            }
+                            emit searchCompleted(fuzzyResults);
+                        });
+                    });
+                });
             });
             return;
         }
@@ -77,20 +156,55 @@ void Dnf5CliBackend::search(const QString &query) {
 void Dnf5CliBackend::loadPackage(const QString &name) {
     runCommand("dnf5", {"repoquery", "--installed", "--queryformat=" + packageQueryFormat(), name},
                [this, name](int exitCode, const QString &out, const QString &err) {
+        auto emitWithDescription = [this, name](Package package, bool installedOnly) {
+            QStringList args{"repoquery"};
+            if (installedOnly)
+                args << "--installed";
+            else
+                args << "--available";
+            args << "--queryformat=%{description}" << name;
+            runCommand("dnf5", args, [this, name, package](int descriptionExit, const QString &descriptionOut, const QString &) mutable {
+                if (descriptionExit == 0) {
+                    QStringList lines = nonEmptyLines(descriptionOut);
+                    lines.removeAll("Updating and loading repositories:");
+                    lines.removeAll("Repositories loaded.");
+                    package.description = lines.join('\n').trimmed();
+                }
+                emit packageLoaded(name, package);
+            });
+        };
+
         if (exitCode == 0) {
             const QList<Package> packages = packagesFromDelimitedOutput(out);
             if (!packages.isEmpty()) {
-                emit packageLoaded(name, packages.first());
+                emitWithDescription(packages.first(), true);
                 return;
             }
         } else {
             if (!err.trimmed().isEmpty())
                 emit errorOccurred(err.trimmed());
         }
-        Package package;
-        package.id.name = name;
-        package.installed = true;
-        emit packageLoaded(name, package);
+
+        runCommand("dnf5", {"repoquery", "--available", "--queryformat=" + packageQueryFormat(), name},
+                   [this, name, emitWithDescription](int availableExit, const QString &availableOut, const QString &availableErr) {
+            if (availableExit == 0) {
+                const QList<Package> packages = packagesFromDelimitedOutput(availableOut);
+                if (!packages.isEmpty()) {
+                    Package package = packages.first();
+                    package.installed = false;
+                    emitWithDescription(package, false);
+                    return;
+                }
+            } else if (!availableErr.trimmed().isEmpty()) {
+                emit errorOccurred(availableErr.trimmed());
+            }
+
+            Package package;
+            package.id.name = name;
+            package.installed = false;
+            package.summary = "Package metadata not found";
+            emit packageLoaded(name, package);
+        });
     });
 }
 
@@ -153,7 +267,8 @@ void Dnf5CliBackend::loadRequiredBy(const QString &name) {
 }
 
 void Dnf5CliBackend::loadFiles(const QString &name) {
-    runCommand("rpm", {"-ql", name}, [this, name](int exitCode, const QString &out, const QString &err) {
+    const QString rpmName = packageNameFromNevra(name);
+    runCommand("rpm", {"-ql", rpmName}, [this, name](int exitCode, const QString &out, const QString &err) {
         if (exitCode == 0) {
             emit filesLoaded(name, nonEmptyLines(out));
         } else {
@@ -196,8 +311,24 @@ void Dnf5CliBackend::loadRepositoryInfo(const QString &name) {
             return;
 
         if (pending->installed.id.isValid()) {
-            pending->rows << QStringList{"Installed from", pending->installed.repoId, pending->installed.id.evr(), pending->installed.vendor};
-            pending->rows << QStringList{"Original repo", pending->installed.sourceRpm.isEmpty() ? "Unknown" : pending->installed.sourceRpm, pending->installed.id.arch, repoKind(pending->installed.repoId)};
+            QString installedRepo = pending->installed.repoId;
+            const QString vendor = pending->installed.vendor;
+
+            // Cross-reference: when from_repo metadata is misleading (e.g., shows "terra" for
+            // a package installed from RPM Fusion), look at available repos to find the real
+            // source. Match by vendor since that's the most reliable origin indicator.
+            if (!pending->available.isEmpty() && !vendor.isEmpty()) {
+                for (const Package &avail : pending->available) {
+                    if (avail.repoId != installedRepo && avail.vendor == vendor) {
+                        // Available package matches vendor — use its repo as the correct origin
+                        installedRepo = avail.repoId;
+                        break;
+                    }
+                }
+            }
+
+            pending->rows << QStringList{installedRepo, "Installed from repo", pending->installed.id.evr(), vendor};
+            pending->rows << QStringList{pending->installed.sourceRpm.isEmpty() ? "Unknown" : pending->installed.sourceRpm, "Source RPM", pending->installed.id.arch, repoKind(installedRepo)};
         }
 
         for (const Package &package : pending->available) {
@@ -324,12 +455,79 @@ void Dnf5CliBackend::loadImpact(const QString &name) {
 }
 
 void Dnf5CliBackend::loadUserConfig(const QString &name) {
-    runCommand("rpm", {"-ql", name}, [this, name](int exitCode, const QString &out, const QString &err) {
+    struct PendingConfig {
+        int remaining = 0;
+        QList<QStringList> rows;
+        QSet<QString> seenPaths;
+    };
+
+    const QString rpmName = packageNameFromNevra(name);
+    runCommand("rpm", {"-ql", rpmName}, [this, name, rpmName](int exitCode, const QString &out, const QString &err) {
         if (exitCode == 0) {
-            emit userConfigLoaded(name, userConfigRows(name, nonEmptyLines(out)));
-        } else if (!err.trimmed().isEmpty()) {
-            emit errorOccurred(err.trimmed());
-            emit userConfigLoaded(name, userConfigRows(name, {}));
+            auto pending = QSharedPointer<PendingConfig>::create();
+            pending->rows = userConfigRows(rpmName, nonEmptyLines(out));
+            for (const QStringList &row : pending->rows) {
+                if (row.size() > 1 && row[1].startsWith('/'))
+                    pending->seenPaths.insert(row[1]);
+            }
+            pending->remaining = 1;
+
+            auto finish = [this, pending, name]() {
+                --pending->remaining;
+                if (pending->remaining == 0)
+                    emit userConfigLoaded(name, pending->rows);
+            };
+
+            runCommand("dnf5", {"repoquery", "--requires", rpmName}, [this, pending, rpmName, finish](int requiresExit, const QString &requiresOut, const QString &requiresErr) {
+                if (requiresExit == 0) {
+                    QSet<QString> providers;
+                    for (const QString &capability : nonEmptyLines(requiresOut)) {
+                        const QString provider = packageNameFromDependencyCapability(capability);
+                        if (!provider.isEmpty() && provider != rpmName)
+                            providers.insert(provider);
+                    }
+
+                    pending->remaining += providers.size();
+                    for (const QString &provider : providers) {
+                        runCommand("rpm", {"-q", provider}, [this, pending, provider, finish](int queryExit, const QString &, const QString &) {
+                            if (queryExit != 0) {
+                                finish();
+                                return;
+                            }
+
+                            pending->remaining += 1;
+                            runCommand("rpm", {"-qc", provider}, [pending, provider, finish](int configExit, const QString &configOut, const QString &) {
+                                if (configExit == 0) {
+                                    for (const QString &path : nonEmptyLines(configOut)) {
+                                        if (pending->seenPaths.contains(path))
+                                            continue;
+                                        pending->seenPaths.insert(path);
+                                        pending->rows << QStringList{
+                                            "Related Config",
+                                            path,
+                                            "RPM config",
+                                            "Owned by direct dependency " + provider
+                                        };
+                                    }
+                                }
+                                finish();
+                            });
+                            finish();
+                        });
+                    }
+                } else if (!requiresErr.trimmed().isEmpty()) {
+                    emit errorOccurred(requiresErr.trimmed());
+                }
+                finish();
+            });
+        } else {
+            const QString message = err.trimmed().isEmpty()
+                ? QString("rpm -ql %1 failed with exit code %2").arg(rpmName).arg(exitCode)
+                : err.trimmed();
+            emit errorOccurred(message);
+            emit userConfigLoaded(name, {
+                QStringList{"Error", message, "RPM query failed", "The package is not installed or RPM could not list its files."}
+            });
         }
     });
 }
@@ -432,7 +630,7 @@ Package Dnf5CliBackend::packageFromRepoqueryLine(const QString &line) {
 Package Dnf5CliBackend::packageFromDelimitedLine(const QString &line) {
     const QStringList parts = line.split('|');
     Package package;
-    if (parts.isEmpty())
+    if (parts.size() < 16)
         return package;
 
     auto value = [&parts](int index) {
@@ -444,7 +642,18 @@ Package Dnf5CliBackend::packageFromDelimitedLine(const QString &line) {
     package.id.version = value(2);
     package.id.release = value(3);
     package.id.arch = value(4);
-    package.repoId = value(6).isEmpty() ? value(5) : value(6);
+    const QString repoid = value(5);
+    const QString fromRepo = value(6);
+
+    // repoid is the actual install-source repo in DNF5 (may be "@System" on older versions).
+    // from_repo is whichever enabled repo currently provides this in metadata — it is NOT
+    // the original install source. Prefer repoid when it's meaningful.
+    if (!repoid.isEmpty() && repoid != "@System") {
+        package.repoId = repoid;
+    } else {
+        package.repoId = fromRepo;
+    }
+
     package.installReason = value(7);
     package.installSize = value(8).toLongLong();
     const qint64 installEpoch = value(9).toLongLong();
@@ -456,7 +665,10 @@ Package Dnf5CliBackend::packageFromDelimitedLine(const QString &line) {
     package.sourceRpm = value(13);
     package.vendor = value(14);
     package.packager = value(15);
-    package.installed = value(5) == "@System" || value(6).isEmpty() == false;
+    // repoid==@System → classic DNF4-style installed indicator.
+    // from_repo non-empty → package was installed from somewhere (regardless of repoid).
+    // Both false → likely an --available query result (repoid is the actual repo, from_repo empty).
+    package.installed = (repoid == "@System") || !fromRepo.isEmpty();
     return package;
 }
 
@@ -466,12 +678,17 @@ Package Dnf5CliBackend::packageFromInfoOutput(const QString &text, const QString
     package.installed = true;
 
     const QStringList lines = text.split('\n');
+    bool inDescription = false;
     for (const QString &line : lines) {
         const int colon = line.indexOf(':');
-        if (colon == -1)
+        if (colon == -1) {
+            if (inDescription && !line.trimmed().isEmpty())
+                package.description += "\n" + line.trimmed();
             continue;
+        }
         const QString key = line.left(colon).trimmed().toLower();
         const QString value = line.mid(colon + 1).trimmed();
+        inDescription = false;
 
         if (key == "name") package.id.name = value;
         else if (key == "epoch") package.id.epoch = value;
@@ -484,7 +701,10 @@ Package Dnf5CliBackend::packageFromInfoOutput(const QString &text, const QString
         else if (key == "summary") package.summary = value;
         else if (key == "url") package.url = value;
         else if (key == "license") package.license = value;
-        else if (key == "description") package.description = value;
+        else if (key == "description") {
+            package.description = value;
+            inDescription = true;
+        }
     }
 
     if (package.summary.isEmpty())
@@ -552,7 +772,7 @@ QList<QStringList> Dnf5CliBackend::historyRowsFromOutput(const QString &text, co
 }
 
 QString Dnf5CliBackend::packageQueryFormat() {
-    return "%{name}|%{epoch}|%{version}|%{release}|%{arch}|%{repoid}|%{from_repo}|%{reason}|%{installsize}|%{installtime}|%{summary}|%{license}|%{url}|%{sourcerpm}|%{vendor}|%{packager}";
+    return "%{name}|%{epoch}|%{version}|%{release}|%{arch}|%{repoid}|%{from_repo}|%{reason}|%{installsize}|%{installtime}|%{summary}|%{license}|%{url}|%{sourcerpm}|%{vendor}|%{packager}\\n";
 }
 
 QString Dnf5CliBackend::packageNameFromNevra(const QString &text) {
@@ -585,10 +805,26 @@ QList<QStringList> Dnf5CliBackend::userConfigRows(const QString &packageName, co
 
     rows << QStringList{
         "Note",
-        "User config is guessed. RPM does not track files in your home folder.",
-        "Home folder only",
-        "XDG config/data/cache guesses"
+        "System config comes from RPM-owned /etc paths. User config is guessed because RPM does not track files in your home folder.",
+        "Read-only",
+        "RPM file list plus XDG config/data/cache guesses"
     };
+
+    for (const QString &path : ownedFiles) {
+        if (!path.startsWith("/etc"))
+            continue;
+        if (seenPaths.contains(path))
+            continue;
+        seenPaths.insert(path);
+
+        QFileInfo info(path);
+        rows << QStringList{
+            "System Config",
+            path,
+            info.isDir() ? "Directory" : "File",
+            "Owned by package " + packageName
+        };
+    }
 
     const QString configHome = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
     const QString dataHome = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation);
@@ -631,9 +867,9 @@ QList<QStringList> Dnf5CliBackend::userConfigRows(const QString &packageName, co
     if (rows.size() == 1) {
         rows << QStringList{
             "No match",
-            "No likely user config/data/cache path was found.",
+            "No package-owned /etc config or likely user config/data/cache path was found.",
             "None found",
-            "Checked package name, owned binaries, and desktop file IDs"
+            "Checked RPM-owned /etc paths, package name, owned binaries, and desktop file IDs"
         };
     }
 

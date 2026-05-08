@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.0.2 - 2026-05-08
+
+### Added
+
+- Reset button that clears the search, selected package, navigation history, package tables, description, and log.
+- Package description box at the bottom of the Overview tab.
+- Split search results into Installed Packages and All Packages sections.
+- Version and Architecture columns in All Packages.
+- Fuzzy package-name fallback so partial searches such as `noctalia` can find packages such as `noctalia-shell`.
+- Right-click action to open the containing folder for rows that contain local filesystem paths.
+
+### Fixed
+
+- Available-only package results now load available metadata instead of showing the same installed-package placeholder.
+- Provider searches now check installed providers before available providers.
+- Search no longer auto-opens details; details load only after the user selects a result.
+- All Packages now deduplicates identical package/version/architecture rows.
+- Config now includes package-owned `/etc` config and direct dependency config relevant to the selected package.
+- RPM-backed tabs normalize selected NEVRA values back to package names before calling RPM.
+- Config tab RPM failures now show the underlying error in the log and table.
+- Failed Config tab loads are not cached as successful, so revisiting the tab can retry the check.
+- Failed commands clear in-flight tab state and leave the header status in an error state.
+
 ## v0.0.1 - 2026-05-07
 
 Initial read-only prototype of LGL DNF Helper.
