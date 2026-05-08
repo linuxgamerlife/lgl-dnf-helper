@@ -65,7 +65,7 @@ Package overview loads first. Heavier tabs such as Dependencies, Required By, Re
 ## Build Dependencies
 
 ```bash
-sudo dnf install cmake gcc-c++ qt6-qtbase-devel dnf5 rpm
+sudo dnf install cmake gcc-c++ qt6-qtbase-devel
 ```
 
 ## Building
