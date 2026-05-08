@@ -810,6 +810,10 @@ void MainWindow::showAbout() {
         "<p><b>Created by LinuxGamerLife</b></p>"
         "<p><a href='https://linuxgamerlife.net'>linuxgamerlife.net</a> &nbsp;|&nbsp; "
         "<a href='https://github.com/linuxgamerlife'>github.com/linuxgamerlife</a></p>"
+        "<p>If this tool helped you understand your Fedora packages, please consider supporting its development.</p>"
+        "<p><a style='background-color:#a173f5; color:white; font-weight:bold; "
+        "padding:8px 20px; border-radius:6px; text-decoration:none;' "
+        "href='https://ko-fi.com/linuxgamerlife'>Buy me a coffee on Ko-fi</a></p>"
         "<hr/>"
         "<p style='color:gray; font-size:small;'>Read-only prototype. Released under the MIT licence.</p>"
     );
