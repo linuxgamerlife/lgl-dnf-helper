@@ -85,7 +85,7 @@ void MainWindow::setupUi() {
     forwardBtn->setToolTip("Go forward to the next package in your navigation history");
     forwardBtn->setEnabled(false);
     searchEdit = new QLineEdit;
-    searchEdit->setPlaceholderText("Package, command, capability, or file path");
+    searchEdit->setPlaceholderText("Search package name");
     searchBtn = new QPushButton("Search");
     searchBtn->setFixedHeight(34);
     searchBtn->setMinimumWidth(100);
@@ -803,7 +803,7 @@ void MainWindow::showAbout() {
     about.setTextInteractionFlags(Qt::TextBrowserInteraction);
     about.setText(
         "<h3>LGL DNF Helper</h3>"
-        "<p style='color:gray;'>Version 0.0.2</p>"
+        "<p style='color:gray;'>Version 0.1.0</p>"
         "<p>A Qt6 GUI for understanding installed RPM packages, DNF5 dependencies, "
         "reverse dependencies, package files, and repository origin.</p>"
         "<hr/>"

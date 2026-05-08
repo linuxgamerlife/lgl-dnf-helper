@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.1.0 - 2026-05-08
+
+First minor release of the read-only package inspection workflow.
+
+### Notes
+
+- Carries forward the grouped search results, fuzzy matching, package descriptions, config discovery improvements, and read-only DNF/RPM inspection behavior from the 0.0.x prototype series.
+- No privileged package-management actions are included.
+
 ## v0.0.2 - 2026-05-08
 
 ### Added

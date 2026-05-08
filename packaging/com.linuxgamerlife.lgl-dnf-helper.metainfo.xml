@@ -62,6 +62,11 @@
   </requires>
 
   <releases>
+    <release version="0.1.0" date="2026-05-08">
+      <description>
+        <p>First minor release of the read-only DNF/RPM package inspection workflow.</p>
+      </description>
+    </release>
     <release version="0.0.2" date="2026-05-08">
       <description>
         <p>Improved reset behavior, search result grouping, fuzzy package matching, package descriptions, config discovery, and error reporting.</p>

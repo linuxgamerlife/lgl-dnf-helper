@@ -1,5 +1,5 @@
 Name:           lgl-dnf-helper
-Version:        0.0.2
+Version:        0.1.0
 Release:        1%{?dist}
 Summary:        Qt6 GUI for inspecting RPM packages and DNF5 dependencies
 
@@ -41,8 +41,8 @@ install -Dm755 build/lgl-dnf-helper \
 install -Dm644 data/lgl-dnf-helper.desktop \
     %{buildroot}%{_datadir}/applications/lgl-dnf-helper.desktop
 
-install -Dm644 resources/icons/lgl-dnf-helper_icon.svg \
-    %{buildroot}%{_datadir}/icons/hicolor/scalable/apps/lgl-dnf-helper.svg
+install -Dm644 resources/icons/lgl-dnf-helper-icon.png \
+    %{buildroot}%{_datadir}/icons/hicolor/512x512/apps/lgl-dnf-helper.png
 
 install -Dm644 packaging/com.linuxgamerlife.lgl-dnf-helper.metainfo.xml \
     %{buildroot}%{_datadir}/metainfo/com.linuxgamerlife.lgl-dnf-helper.metainfo.xml
@@ -77,10 +77,13 @@ fi
 %doc README.md
 %{_bindir}/lgl-dnf-helper
 %{_datadir}/applications/lgl-dnf-helper.desktop
-%{_datadir}/icons/hicolor/scalable/apps/lgl-dnf-helper.svg
+%{_datadir}/icons/hicolor/512x512/apps/lgl-dnf-helper.png
 %{_datadir}/metainfo/com.linuxgamerlife.lgl-dnf-helper.metainfo.xml
 
 %changelog
+* Fri May 08 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.1.0-1
+- Promote the package inspection workflow to the first minor release
+
 * Fri May 08 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.0.2-1
 - Add reset action, grouped package results, fuzzy search, package descriptions, config discovery improvements, and improved tab error handling
 

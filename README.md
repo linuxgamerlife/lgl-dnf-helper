@@ -2,12 +2,6 @@
 
 A Qt6/C++ Fedora utility for inspecting installed RPM packages and DNF5 dependency relationships.
 
-<p>
-  <a href="https://ko-fi.com/linuxgamerlife">
-    <img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" height="36" alt="Support on Ko-fi" />
-  </a>
-</p>
-
 This project is currently an early read-only prototype. It helps users understand:
 
 - What a package is.
@@ -88,3 +82,11 @@ cmake --build build -j$(nproc)
 ```
 
 The app should not be run with sudo. Read-only package inspection is intended to work as a regular user.
+
+## Support
+
+<p>
+  <a href="https://ko-fi.com/linuxgamerlife">
+    <img src="https://storage.ko-fi.com/cdn/kofi6.png?v=6" height="36" alt="Support on Ko-fi" />
+  </a>
+</p>

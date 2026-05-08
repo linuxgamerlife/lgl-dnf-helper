@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(lgl-dnf-helper VERSION 0.0.2 LANGUAGES CXX)
+project(lgl-dnf-helper VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -41,8 +41,8 @@ target_compile_options(lgl-dnf-helper PRIVATE
 
 install(TARGETS lgl-dnf-helper DESTINATION bin)
 install(FILES data/lgl-dnf-helper.desktop DESTINATION share/applications)
-install(FILES resources/icons/lgl-dnf-helper_icon.svg
-        DESTINATION share/icons/hicolor/scalable/apps
-        RENAME lgl-dnf-helper.svg)
+install(FILES resources/icons/lgl-dnf-helper-icon.png
+        DESTINATION share/icons/hicolor/512x512/apps
+        RENAME lgl-dnf-helper.png)
 install(FILES packaging/com.linuxgamerlife.lgl-dnf-helper.metainfo.xml
         DESTINATION share/metainfo)
