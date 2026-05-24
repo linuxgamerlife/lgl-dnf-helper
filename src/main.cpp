@@ -6,7 +6,7 @@
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     app.setApplicationName("LGL DNF Helper");
-    app.setApplicationVersion("0.1.1");
+    app.setApplicationVersion("0.1.2");
     app.setOrganizationName("lgl-dnf-helper");
     app.setWindowIcon(QIcon(":/icons/lgl-dnf-helper-icon.png"));
 

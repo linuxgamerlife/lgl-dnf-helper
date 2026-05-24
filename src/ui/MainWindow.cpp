@@ -151,12 +151,15 @@ void MainWindow::setupUi() {
     auto *packageGroup = new QGroupBox("Selected Package");
     auto *packageLayout = new QVBoxLayout(packageGroup);
     packageTitle = new QLabel("No package selected");
+    packageTitle->setTextFormat(Qt::PlainText);
     QFont packageTitleFont = packageTitle->font();
     packageTitleFont.setPointSize(12);
     packageTitleFont.setBold(true);
     packageTitle->setFont(packageTitleFont);
     packageNevra = new QLabel("Search for an installed package to begin.");
+    packageNevra->setTextFormat(Qt::PlainText);
     packageBadges = new QLabel;
+    packageBadges->setTextFormat(Qt::PlainText);
     packageBadges->setWordWrap(true);
     packageLayout->addWidget(packageTitle);
     packageLayout->addWidget(packageNevra);
@@ -636,7 +639,16 @@ void MainWindow::onDependenciesLoaded(const QString &requestName, const QList<De
 void MainWindow::onRequiredByLoaded(const QString &requestName, const QList<DependencyEdge> &dependencies) {
     if (requestName != currentPackageName)
         return;
-    populateDependencyTable(requiredByTable, dependencies);
+    requiredByTable->setRowCount(dependencies.size());
+    for (int row = 0; row < dependencies.size(); ++row) {
+        const auto &dep = dependencies[row];
+        requiredByTable->setItem(row, 0, item("Requires"));
+        requiredByTable->setItem(row, 1, item(dep.capability));
+        requiredByTable->setItem(row, 2, item(dep.installReason));
+        requiredByTable->setItem(row, 3, item(dep.repoId));
+        requiredByTable->setItem(row, 4, item(QString()));
+    }
+    adjustTableRows(requiredByTable);
     markTabLoaded("required-by");
 }
 
@@ -649,7 +661,7 @@ void MainWindow::onFilesLoaded(const QString &requestName, const QStringList &fi
         QString type = "Other";
         if (path.startsWith("/usr/bin") || path.startsWith("/usr/sbin"))
             type = "Executable";
-        else if (path.contains("/lib") && path.endsWith(".so"))
+        else if (path.contains("/lib") && path.contains(".so"))
             type = "Library";
         else if (path.startsWith("/etc"))
             type = "Config";
@@ -803,7 +815,7 @@ void MainWindow::showAbout() {
     about.setTextInteractionFlags(Qt::TextBrowserInteraction);
     about.setText(
         "<h3>LGL DNF Helper</h3>"
-        "<p style='color:gray;'>Version 0.1.0</p>"
+        "<p style='color:gray;'>Version " + QApplication::applicationVersion() + "</p>"
         "<p>A Qt6 GUI for understanding installed RPM packages, DNF5 dependencies, "
         "reverse dependencies, package files, and repository origin.</p>"
         "<hr/>"

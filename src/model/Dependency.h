@@ -26,4 +26,6 @@ struct DependencyEdge {
     DependencyType type = DependencyType::Unknown;
     PackageId installedProvider;
     QList<PackageId> availableProviders;
+    QString installReason;
+    QString repoId;
 };

@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.1.2 - 2026-05-24
+
+### Fixed
+
+- `dnf5 repoquery` commands timing out: all repoquery calls now use `--cacheonly` to read local metadata only and never trigger a network refresh.
+- Required By tab showing the package name twice: the "Installed Reason" column now shows the actual install reason (user/dependency) and the "Repository" column now shows the source repo.
+- Versioned shared library files (`.so.1`, `.so.6.0.2`, etc.) were classified as "Other" in the Files tab instead of "Library".
+- About dialog was showing a hardcoded version string instead of the running application version.
+
+### Changed
+
+- Removed an unnecessary `this` capture in the related config dependency lambda.
+- Package header labels (`packageTitle`, `packageNevra`, `packageBadges`) now explicitly use plain text format.
+
 ## v0.1.1 - 2026-05-24
 
 ### Changed

@@ -42,7 +42,7 @@ The app should not be run with sudo.
 - Search results are split into Installed Packages and All Packages; package details load only after you select a result.
 - Overview tab with version, arch, repo, install reason, size, source RPM, license, vendor, packager, and package description.
 - Dependencies tab with hard dependencies, weak dependencies, provides, conflicts, and obsoletes.
-- Required By tab showing installed packages that depend on the selected package/capability.
+- Required By tab showing installed packages that depend on the selected package/capability, including their install reason and source repository.
 - Files tab using RPM file ownership data.
 - Related Config tab showing RPM config files owned by direct dependency packages.
 - Config tab that shows package-owned `/etc` config, likely XDG config/data/cache paths in your home folder, and relevant direct-dependency RPM config.
@@ -75,6 +75,8 @@ The user-home part of the Config tab is heuristic. RPM does not track files in y
 ## Performance Notes
 
 Package overview loads first. Heavier tabs such as Dependencies, Required By, Related Config, Repository, and Impact load only when opened. This reduces CPU spikes from launching many DNF/RPM queries at once.
+
+All `dnf5 repoquery` calls use local metadata cache only (`--cacheonly`). The app never triggers a repository refresh, so queries return immediately regardless of network state.
 
 ## Safety Notes
 

@@ -255,6 +255,8 @@ void Dnf5CliBackend::loadRequiredBy(const QString &name) {
                 edge.type = DependencyType::Requires;
                 edge.capability = package.id.name;
                 edge.installedProvider = package.id;
+                edge.installReason = package.installReason;
+                edge.repoId = package.repoId;
                 edges << edge;
             }
             emit requiredByLoaded(name, edges);
@@ -576,7 +578,7 @@ void Dnf5CliBackend::loadRelatedConfig(const QString &name) {
                     }
 
                     pending->remaining += 1;
-                    runCommand("rpm", {"-qc", provider}, [this, pending, provider, finish](int configExit, const QString &configOut, const QString &) {
+                    runCommand("rpm", {"-qc", provider}, [pending, provider, finish](int configExit, const QString &configOut, const QString &) {
                         if (configExit == 0) {
                             for (const QString &path : nonEmptyLines(configOut)) {
                                 if (pending->seenPaths.contains(path))
@@ -604,6 +606,10 @@ void Dnf5CliBackend::loadRelatedConfig(const QString &name) {
 
 void Dnf5CliBackend::runCommand(const QString &program, const QStringList &arguments,
                                 std::function<void(int, const QString &, const QString &)> handler) {
+    QStringList args = arguments;
+    if (program == "dnf5" && !args.isEmpty() && args.first() == "repoquery")
+        args.insert(1, "--cacheonly");
+
     auto *process = new Dnf5Process(this);
     connect(process, &Dnf5Process::started, this, &PackageBackend::commandStarted);
     connect(process, &Dnf5Process::failed, this, [this, process](const QString &command, const QString &message) {
@@ -617,7 +623,7 @@ void Dnf5CliBackend::runCommand(const QString &program, const QStringList &argum
         handler(exitCode, out, err);
         process->deleteLater();
     });
-    process->run(program, arguments);
+    process->run(program, args);
 }
 
 Package Dnf5CliBackend::packageFromRepoqueryLine(const QString &line) {
