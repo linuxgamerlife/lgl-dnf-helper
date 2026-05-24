@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.1 - 2026-05-24
+
+### Changed
+
+- Updated application icon.
+
 ## v0.1.0 - 2026-05-08
 
 First minor release of the read-only package inspection workflow.

@@ -2,7 +2,7 @@
 
 A Qt6/C++ Fedora utility for inspecting installed RPM packages and DNF5 dependency relationships.
 
-This project is currently an early read-only prototype. It helps users understand:
+Read-only. It helps users understand:
 
 - What a package is.
 - Why it is installed.
@@ -13,6 +13,28 @@ This project is currently an early read-only prototype. It helps users understan
 - Which repository it came from.
 - Which DNF history transactions mention it.
 - Whether it appears to be a leaf, extra package, or autoremove candidate.
+
+## Installation
+
+### COPR (recommended)
+
+```bash
+sudo dnf copr enable linuxgamerlife/lgl-dnf-helper
+sudo dnf install lgl-dnf-helper
+```
+
+Requires Fedora with `dnf5` and `rpm` installed. If `dnf5` is missing the app opens in setup mode with guidance.
+
+### Build from source
+
+```bash
+sudo dnf install cmake gcc-c++ qt6-qtbase-devel
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
+./build/lgl-dnf-helper
+```
+
+The app should not be run with sudo.
 
 ## Current Features
 
@@ -61,27 +83,6 @@ Package overview loads first. Heavier tabs such as Dependencies, Required By, Re
 - It does not install, remove, update, or modify packages.
 - It uses DNF/RPM command arguments directly through `QProcess`, not shell command strings.
 - Impact results are a package map, not a removal simulation.
-
-## Build Dependencies
-
-```bash
-sudo dnf install cmake gcc-c++ qt6-qtbase-devel
-```
-
-## Building
-
-```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j$(nproc)
-```
-
-## Running
-
-```bash
-./build/lgl-dnf-helper
-```
-
-The app should not be run with sudo. Read-only package inspection is intended to work as a regular user.
 
 ## Support
 

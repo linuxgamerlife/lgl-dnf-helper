@@ -1,13 +1,12 @@
 Name:           lgl-dnf-helper
-Version:        0.1.0
+Version:        0.1.1
 Release:        1%{?dist}
 Summary:        Qt6 GUI for inspecting RPM packages and DNF5 dependencies
 
 License:        MIT
 URL:            https://github.com/linuxgamerlife/lgl-dnf-helper
-Source0:        https://github.com/linuxgamerlife/%{name}/archive/refs/tags/v%{version}.zip
+Source0:        https://github.com/linuxgamerlife/%{name}/archive/refs/tags/v%{version}.tar.gz
 BuildRequires:  cmake >= 3.16
-BuildRequires:  unzip
 BuildRequires:  gcc-c++
 BuildRequires:  qt6-qtbase-devel
 Requires:       qt6-qtbase
@@ -81,6 +80,9 @@ fi
 %{_datadir}/metainfo/com.linuxgamerlife.lgl-dnf-helper.metainfo.xml
 
 %changelog
+* Sat May 24 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.1.1-1
+- Update application icon
+
 * Fri May 08 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.1.0-1
 - Promote the package inspection workflow to the first minor release
 

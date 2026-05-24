@@ -62,6 +62,11 @@
   </requires>
 
   <releases>
+    <release version="0.1.1" date="2026-05-24">
+      <description>
+        <p>Updated application icon.</p>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-05-08">
       <description>
         <p>First minor release of the read-only DNF/RPM package inspection workflow.</p>
