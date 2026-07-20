@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.3 - 2026-07-20
+
+### Fixed
+
+- Desktop entry (`data/lgl-dnf-helper.desktop`) referenced the application icon by a hardcoded local absolute path instead of the installed icon name (`lgl-dnf-helper`), breaking icon lookup outside the original build machine.
+
 ## v0.1.2 - 2026-05-24
 
 ### Fixed

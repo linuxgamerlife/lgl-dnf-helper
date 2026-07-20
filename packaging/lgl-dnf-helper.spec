@@ -1,5 +1,5 @@
 Name:           lgl-dnf-helper
-Version:        0.1.2
+Version:        0.1.3
 Release:        1%{?dist}
 Summary:        Qt6 GUI for inspecting RPM packages and DNF5 dependencies
 
@@ -80,6 +80,9 @@ fi
 %{_datadir}/metainfo/com.linuxgamerlife.lgl-dnf-helper.metainfo.xml
 
 %changelog
+* Mon Jul 20 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.1.3-1
+- Fix desktop file using a hardcoded local absolute path for the application icon instead of the installed icon name
+
 * Sat May 24 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.1.2-1
 - Fix repoquery commands timing out by using cached metadata only
 - Fix Required By tab showing duplicate package name instead of install reason and repository
