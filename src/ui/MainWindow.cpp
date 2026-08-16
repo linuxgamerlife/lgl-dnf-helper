@@ -15,10 +15,29 @@
 #include <QMessageBox>
 #include <QSplitter>
 #include <QStatusBar>
+#include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
 
 #include "util/HumanSize.h"
+
+namespace {
+class SortingGuard {
+public:
+    explicit SortingGuard(QTableWidget *table)
+        : table(table), sortingEnabled(table->isSortingEnabled()) {
+        table->setSortingEnabled(false);
+    }
+
+    ~SortingGuard() {
+        table->setSortingEnabled(sortingEnabled);
+    }
+
+private:
+    QTableWidget *table;
+    bool sortingEnabled;
+};
+}
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("LGL DNF Helper");
@@ -32,6 +51,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setupConnections();
     buildSetupTab();
     qApp->installEventFilter(this);
+
+    QTimer::singleShot(0, searchEdit, [this] {
+        searchEdit->setFocus(Qt::OtherFocusReason);
+    });
 
     backend->checkTools();
 }
@@ -106,7 +129,8 @@ void MainWindow::setupUi() {
 
     auto configureResultsTable = [](QTableWidget *table) {
         table->setColumnCount(1);
-        table->horizontalHeader()->setVisible(false);
+        table->setHorizontalHeaderLabels({"Package"});
+        table->horizontalHeader()->setVisible(true);
         table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
         table->verticalHeader()->setVisible(false);
         table->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -117,6 +141,7 @@ void MainWindow::setupUi() {
         table->verticalHeader()->setDefaultSectionSize(28);
         table->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
         table->setMinimumWidth(280);
+        table->setSortingEnabled(true);
     };
 
     installedResultsTable = new QTableWidget;
@@ -140,8 +165,15 @@ void MainWindow::setupUi() {
     otherLayout->setContentsMargins(6, 6, 6, 6);
     otherLayout->addWidget(otherResultsTable);
 
-    resultsLayout->addWidget(installedGroup, 0);
-    resultsLayout->addWidget(otherGroup, 1);
+    auto *resultsSplitter = new QSplitter(Qt::Vertical);
+    resultsSplitter->setChildrenCollapsible(false);
+    resultsSplitter->setHandleWidth(8);
+    resultsSplitter->addWidget(installedGroup);
+    resultsSplitter->addWidget(otherGroup);
+    resultsSplitter->setStretchFactor(0, 1);
+    resultsSplitter->setStretchFactor(1, 1);
+    resultsSplitter->setSizes({240, 240});
+    resultsLayout->addWidget(resultsSplitter);
 
     auto *detailWidget = new QWidget;
     auto *detailLayout = new QVBoxLayout(detailWidget);
@@ -255,6 +287,7 @@ void MainWindow::setupUi() {
         table->verticalHeader()->setDefaultSectionSize(28);
         table->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
         table->horizontalHeader()->setStretchLastSection(true);
+        table->setSortingEnabled(true);
         table->setContextMenuPolicy(Qt::CustomContextMenu);
         connect(table, &QTableWidget::customContextMenuRequested, this, &MainWindow::showTableContextMenu);
     }
@@ -450,6 +483,7 @@ void MainWindow::resetUi() {
     mainTabs->setCurrentWidget(overviewTab);
     setState("Ready", QColor("green"));
     statusBar()->showMessage("Reset");
+    searchEdit->setFocus(Qt::OtherFocusReason);
 }
 
 void MainWindow::goBack() {
@@ -469,6 +503,8 @@ void MainWindow::goForward() {
 }
 
 void MainWindow::onSearchCompleted(const QList<PackageQueryResult> &results) {
+    SortingGuard installedSorting(installedResultsTable);
+    SortingGuard otherSorting(otherResultsTable);
     currentResults = results;
     installedResultsTable->setRowCount(0);
     otherResultsTable->setRowCount(0);
@@ -639,6 +675,7 @@ void MainWindow::onDependenciesLoaded(const QString &requestName, const QList<De
 void MainWindow::onRequiredByLoaded(const QString &requestName, const QList<DependencyEdge> &dependencies) {
     if (requestName != currentPackageName)
         return;
+    SortingGuard sorting(requiredByTable);
     requiredByTable->setRowCount(dependencies.size());
     for (int row = 0; row < dependencies.size(); ++row) {
         const auto &dep = dependencies[row];
@@ -655,6 +692,7 @@ void MainWindow::onRequiredByLoaded(const QString &requestName, const QList<Depe
 void MainWindow::onFilesLoaded(const QString &requestName, const QStringList &files) {
     if (requestName != currentPackageName)
         return;
+    SortingGuard sorting(filesTable);
     filesTable->setRowCount(files.size());
     for (int row = 0; row < files.size(); ++row) {
         const QString &path = files[row];
@@ -872,6 +910,7 @@ void MainWindow::populateOverview(const Package &package) {
         {"Packager", package.packager},
     };
 
+    SortingGuard sorting(overviewTable);
     overviewTable->setRowCount(rows.size());
     for (int row = 0; row < rows.size(); ++row) {
         overviewTable->setItem(row, 0, item(rows[row].key));
@@ -884,6 +923,7 @@ void MainWindow::populateOverview(const Package &package) {
 }
 
 void MainWindow::populateDependencyTable(QTableWidget *table, const QList<DependencyEdge> &dependencies) {
+    SortingGuard sorting(table);
     table->setRowCount(dependencies.size());
     for (int row = 0; row < dependencies.size(); ++row) {
         const auto &dependency = dependencies[row];
@@ -897,6 +937,7 @@ void MainWindow::populateDependencyTable(QTableWidget *table, const QList<Depend
 }
 
 void MainWindow::populateRows(QTableWidget *table, const QList<QStringList> &rows) {
+    SortingGuard sorting(table);
     table->setRowCount(rows.size());
     for (int row = 0; row < rows.size(); ++row) {
         const QStringList &fields = rows[row];

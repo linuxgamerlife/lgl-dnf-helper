@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- Package result panes can now be resized vertically with a draggable separator.
+- Search and detail tables can now be sorted by clicking their column headers.
+- The package search field now receives keyboard focus when the app opens and after a reset.
+
 ## v0.1.3 - 2026-07-20
 
 ### Fixed
