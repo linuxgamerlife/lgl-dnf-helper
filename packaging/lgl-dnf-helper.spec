@@ -88,7 +88,7 @@ fi
 * Mon Jul 20 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.1.3-1
 - Fix desktop file using a hardcoded local absolute path for the application icon instead of the installed icon name
 
-* Sat May 24 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.1.2-1
+* Sun May 24 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.1.2-1
 - Fix repoquery commands timing out by using cached metadata only
 - Fix Required By tab showing duplicate package name instead of install reason and repository
 - Fix versioned shared library files (.so.x) classified as Other instead of Library
@@ -96,7 +96,7 @@ fi
 - Remove unused this capture in related config lambda
 - Set plain text format on package header labels
 
-* Sat May 24 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.1.1-1
+* Sun May 24 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.1.1-1
 - Update application icon
 
 * Fri May 08 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 0.1.0-1
