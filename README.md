@@ -111,9 +111,10 @@ See [CHANGELOG.md](CHANGELOG.md) for the complete release history.
 
 ## Build from Source
 
-DNF Helper is a GTK 4 and libadwaita application in the `gtk/` folder, built
-from the repository root. It requires gtkmm 4.20, libadwaita 1.6, JSON-GLib,
-DNF5, and RPM.
+DNF Helper is a GTK 4 and libadwaita application built from the repository
+root. Its maintained source is in `src/`, resources are in `data/`, and tests
+are in `tests/`. It requires gtkmm 4.20, libadwaita 1.6, JSON-GLib, DNF5, and
+RPM.
 
 Install the dependencies on Fedora 44:
 
@@ -139,6 +140,9 @@ Run it directly from the build directory:
 
 Create a source RPM with `make srpm`. It is written to `result/`; COPR uses the
 same packaging rule through `.copr/Makefile`.
+
+The former Qt 6 implementation is retained for historical reference under
+`legacy/qt/`. It is not built, tested, or included in source RPMs.
 
 ---
 

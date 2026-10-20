@@ -22,7 +22,7 @@ struct Request {
 };
 
 // Read-only package queries through the dnf5 and rpm command-line tools. Port of
-// src/backend/Dnf5CliBackend.cpp of the Qt app. Every query is asynchronous; results arrive
+// legacy/qt/src/backend/Dnf5CliBackend.cpp. Every query is asynchronous; results arrive
 // through the signals on the main loop. repoquery always runs with --cacheonly.
 class Backend final {
 public:

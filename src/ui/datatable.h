@@ -45,7 +45,7 @@ struct RowSpec {
     int data;
 };
 
-// A read-only table in place of the Qt app's QTableWidget: sortable and resizable columns,
+// A read-only, sortable table with resizable columns,
 // single row selection, empty cells shown as "—", URLs styled as links, and a context menu
 // (right click, Menu key or Shift+F10) to copy the cell, row or table and to open a URL or
 // the folder of a local path.

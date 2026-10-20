@@ -9,8 +9,8 @@ URL:            https://github.com/linuxgamerlife/lgl-dnf-helper
 # COPR SCM builds do not require a Git tag.
 Source0:        %{name}-%{version}.tar.gz
 
-# The root CMakeLists.txt builds the GTK 4 application in gtk/; the Qt sources
-# in src/ are not built.
+# The root CMakeLists.txt builds the GTK 4 application directly. The archived
+# Qt implementation is not included in release source archives.
 
 BuildRequires:  cmake >= 3.20
 BuildRequires:  cmake-rpm-macros

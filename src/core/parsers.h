@@ -8,7 +8,7 @@
 #include <vector>
 
 // Pure parsing and lookup helpers for dnf5 and rpm output. Port of the static helpers of
-// src/backend/Dnf5CliBackend.cpp in the Qt app, so they can be tested without running dnf5.
+// legacy/qt/src/backend/Dnf5CliBackend.cpp, so they can be tested without running dnf5.
 namespace dnfhelper::parsers {
 
 // The repoquery --queryformat whose lines packageFromDelimitedLine() reads.

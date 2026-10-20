@@ -5,29 +5,29 @@ Use this file to resume context after compaction or token loss.
 ## Current Version
 
 - Version is `2.0.0` (GTK 4 migration) across `packaging/lgl-dnf-helper.spec`,
-  `gtk/CMakeLists.txt`, the metainfo `<releases>`, `CHANGELOG.md` and the README.
-- The packaged app is the GTK 4 (gtkmm + libadwaita) build in `gtk/`, following
+  `CMakeLists.txt`, the metainfo `<releases>`, `CHANGELOG.md` and the README.
+- The packaged app is the GTK 4 (gtkmm + libadwaita) build in `src/`, following
   `/development/projects/docs/gtk-desktop-application-standard.md`. Reference apps:
   lgl-papercutter, lgl-emoji-picker, lgl-colour-picker.
-- The Qt 6 sources in `src/` are kept for reference only and are not built.
+- The Qt 6 sources are archived in `legacy/qt/`; they are not built or packaged.
 
 Build commands (inside the `fedora-dev1` distrobox, where this repo is at
 `/run/host/development/projects/lgl-dnf-helper`):
 
 ```bash
-cmake -B build-gtk -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
-cmake --build build-gtk
-ctest --test-dir build-gtk
-DNFHELPER_GTK_SNAPSHOT=/tmp/snap ./build-gtk/lgl-dnf-helper   # render and quit
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
+cmake --build build
+ctest --test-dir build
+DNFHELPER_GTK_SNAPSHOT=/tmp/snap ./build/lgl-dnf-helper   # render and quit
 make srpm                                                       # SRPM into result/
 ```
 
 ## GTK Layout
 
-- `gtk/src/core/` (no widgets, tested): `package` (models, badges, file types),
+- `src/core/` (no widgets, tested): `package` (models, badges, file types),
   `parsers` (dnf5/rpm output), `commandrunner` (Gio::Subprocess, 30 s timeout),
   `backend` (all queries, sigc signals), `settings`, `theme`.
-- `gtk/src/ui/`: `window` (main window), `datatable` (ColumnView table with sort and
+- `src/ui/`: `window` (main window), `datatable` (ColumnView table with sort and
   context menu), `helpwindow` (HELP.html), `themewatcher`.
 - Namespace `dnfhelper`, CSS prefix `dh-`/`dh_`, GResource `/com/linuxgamerlife/dnfhelper/`.
 - Shortcuts beyond the standard: Ctrl+F (focus search). Ctrl+R was rejected (means reload
@@ -73,9 +73,9 @@ make srpm                                                       # SRPM into resu
   `rpmlib(...)`, `config(...)`, `perl(...)`), filtered to installed with one dnf5 call, then
   one `rpm -q --qf '[%{=NAME}\t%{FILEFLAGS:fflags}\t%{FILENAMES}\n]'` call.
 - Package details load only when the user clicks or double-clicks a result.
-- Overview has a resizable description area using a vertical `QSplitter`.
+- Overview has a resizable description area using a vertical `Gtk::Paned`.
 - Right-click menu no longer has `Inspect Selected Package/Capability`.
-- Right-click rows with local absolute paths can `Open Containing Folder` via `QDesktopServices`; no elevation is attempted.
+- Right-click rows with local absolute paths can open their containing folder; no elevation is attempted.
 - About dialog includes a Ko-fi support link styled like the reference creator backup tool, pointing to `https://ko-fi.com/linuxgamerlife`.
 - README has a `Support` section with a Ko-fi image button at the bottom, not near the top.
 
@@ -123,9 +123,9 @@ Important: provider lookup must check installed providers first. Example:
 
 ## Important Files
 
-- UI: `gtk/src/ui/window.cpp`, tables in `gtk/src/ui/datatable.cpp`
-- Backend: `gtk/src/core/backend.cpp`, parsing in `gtk/src/core/parsers.cpp`
-- Process runner: `gtk/src/core/commandrunner.cpp`
+- UI: `src/ui/window.cpp`, tables in `src/ui/datatable.cpp`
+- Backend: `src/core/backend.cpp`, parsing in `src/core/parsers.cpp`
+- Process runner: `src/core/commandrunner.cpp`
 - Help text: `HELP.html` (bundled, F1)
 - Version metadata: see Current Version above.
 
@@ -137,7 +137,7 @@ Important: provider lookup must check installed providers first. Example:
 
 ## COPR
 
-Project: `linuxgamerlife/lgl-dnf-helper`
+Project: `linuxgamerlife/lgl-toolkit`
 
 Spec path: `packaging/lgl-dnf-helper.spec`
 
@@ -147,6 +147,6 @@ No Git tag or remote tarball is needed.
 
 Install instructions:
 ```bash
-sudo dnf copr enable linuxgamerlife/lgl-dnf-helper
+sudo dnf copr enable linuxgamerlife/lgl-toolkit
 sudo dnf install lgl-dnf-helper
 ```

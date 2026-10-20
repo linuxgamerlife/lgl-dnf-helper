@@ -226,7 +226,7 @@ Good starting stack options:
 
 - Python + GTK4/libadwaita + `python3-libdnf5`.
 - Rust + GTK4/libadwaita + subprocess-backed DNF5 prototype first, then libdnf5 bindings if available and practical.
-- Qt/KDE stack if targeting Plasma users first.
+- C++ with GTK4/libadwaita and a subprocess-backed DNF5 implementation.
 
 Recommended architecture:
 

@@ -29,7 +29,7 @@ namespace dnfhelper {
 class HelpWindow;
 class ThemeWatcher;
 
-// The main window. Port of src/ui/MainWindow.cpp of the Qt app: search, installed and all
+// The main window. Port of legacy/qt/src/ui/MainWindow.cpp: search, installed and all
 // package results, the selected package's details in lazily loaded tabs, and a command log.
 class Window final : public Gtk::ApplicationWindow {
 public:

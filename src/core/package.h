@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-// Package data as reported by dnf5 and rpm. Port of src/model and src/services of the Qt app.
+// Package data as reported by dnf5 and rpm. Port of legacy/qt/src/model and services.
 namespace dnfhelper {
 
 struct PackageId {

@@ -396,7 +396,7 @@ void reportsFailures()
     g_assert_false(finishedOk);
     g_assert_cmpuint(errors.size(), ==, 1);
     g_assert_true(errors[0] == "Command timed out");
-    // As in the Qt app, the tab is left to load again rather than shown as empty.
+    // The tab is left to load again rather than shown as empty.
     g_assert_cmpint(filesEmitted, ==, 0);
 }
 
