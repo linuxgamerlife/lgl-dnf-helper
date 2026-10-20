@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=LGL DNF Helper
+GenericName=Package Inspector
+Comment=Inspect installed RPM packages and DNF dependencies
+Exec=lgl-dnf-helper
+Icon=lgl-dnf-helper
+Terminal=false
+Categories=Settings;PackageManager;
+Keywords=dnf;dnf5;rpm;package;dependencies;fedora;repository;
+StartupNotify=true

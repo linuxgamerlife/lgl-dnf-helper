@@ -1,1 +1,13 @@
 /build/
+/build-*/
+/result*/
+/rpmbuild*/
+/.cache/
+/compile_commands.json
+*.rpm
+*.tar.gz
+.idea/
+.vscode/
+*.user
+*.swp
+*~

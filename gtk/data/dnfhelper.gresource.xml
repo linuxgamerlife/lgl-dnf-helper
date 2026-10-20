@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/com/linuxgamerlife/dnfhelper">
+    <file>style.css</file>
+    <!-- Resolved from the repository root through a second -sourcedir. -->
+    <file>HELP.html</file>
+    <!-- The official app icon, shown in the header bar and About. -->
+    <file alias="lgl-dnf-helper.png">packaging/icons/256x256/lgl-dnf-helper.png</file>
+  </gresource>
+</gresources>

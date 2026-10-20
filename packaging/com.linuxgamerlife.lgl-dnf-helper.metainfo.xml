@@ -4,9 +4,9 @@
   <id>com.linuxgamerlife.lgl-dnf-helper</id>
 
   <name>LGL DNF Helper</name>
-  <summary>Qt6 GUI for inspecting RPM packages and DNF5 dependencies</summary>
+  <summary>Inspect RPM packages and DNF5 dependencies</summary>
 
-  <metadata_license>MIT</metadata_license>
+  <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
 
   <description>
@@ -20,13 +20,17 @@
       files it owns, which config may matter, and where it came from.
     </p>
     <p>
-      The first version is read-only and does not run the GUI as root. If DNF5
-      is not installed, the application opens in setup mode with installation
-      guidance.
+      The application is read-only and does not run as root. If DNF5 is not
+      installed, it opens in setup mode with installation guidance.
     </p>
   </description>
 
-  <launchable type="desktop-id">lgl-dnf-helper.desktop</launchable>
+  <launchable type="desktop-id">com.linuxgamerlife.lgl-dnf-helper.desktop</launchable>
+
+  <!-- The desktop file was named lgl-dnf-helper.desktop before 2.0.0. -->
+  <provides>
+    <id>lgl-dnf-helper.desktop</id>
+  </provides>
 
   <url type="homepage">https://github.com/linuxgamerlife/lgl-dnf-helper</url>
   <url
@@ -38,8 +42,8 @@
   </developer>
 
   <categories>
-    <category>System</category>
     <category>Settings</category>
+    <category>PackageManager</category>
   </categories>
 
   <keywords>
@@ -62,6 +66,27 @@
   </requires>
 
   <releases>
+    <release version="2.0.0" date="2026-10-19">
+      <description>
+        <p>
+          Migrates to GTK 4 for better theming and a better look on GTK desktops.
+          The app now follows the desktop theme live, has a header bar with the
+          app's actions, an optional system title bar (Ctrl+Shift+M), a main menu
+          that opens with Alt, HTML Help with native tables and package badges
+          (F1 or Escape closes it), and Ctrl+F to focus search.
+        </p>
+        <p>
+          Search always includes partial name matches, config is split into
+          System Config and User Config tabs, and History shows each full
+          command line with the package's version change. Lists build
+          dependencies as Build Requires instead of Requires, shows
+          the dependencies of one build instead of every version and
+          architecture, counts every package that depends on a package in
+          Impact, corrects the leaf package check, and no longer shows "(none)"
+          in package versions found by file path.
+        </p>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-08-16">
       <description>
         <p>Added sortable tables, resizable package result panes, and automatic search-field focus.</p>

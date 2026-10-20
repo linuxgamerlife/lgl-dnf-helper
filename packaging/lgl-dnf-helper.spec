@@ -1,85 +1,86 @@
 Name:           lgl-dnf-helper
-Version:        1.0.0
+Version:        2.0.0
 Release:        1%{?dist}
-Summary:        Qt6 GUI for inspecting RPM packages and DNF5 dependencies
+Summary:        Inspect RPM packages and DNF5 dependencies
 
 License:        MIT
 URL:            https://github.com/linuxgamerlife/lgl-dnf-helper
-Source0:        https://github.com/linuxgamerlife/%{name}/archive/refs/tags/v%{version}.tar.gz
-BuildRequires:  cmake >= 3.16
+# Generated from the checked-out commit by `make source` or `make srpm`.
+# COPR SCM builds do not require a Git tag.
+Source0:        %{name}-%{version}.tar.gz
+
+# The root CMakeLists.txt builds the GTK 4 application in gtk/; the Qt sources
+# in src/ are not built.
+
+BuildRequires:  cmake >= 3.20
+BuildRequires:  cmake-rpm-macros
 BuildRequires:  gcc-c++
-BuildRequires:  qt6-qtbase-devel
-Requires:       qt6-qtbase
+BuildRequires:  ninja-build
+BuildRequires:  pkgconfig(gtkmm-4.0) >= 4.20
+BuildRequires:  pkgconfig(libadwaita-1) >= 1.6
+BuildRequires:  pkgconfig(json-glib-1.0)
+BuildRequires:  glib2-devel
+BuildRequires:  desktop-file-utils
+BuildRequires:  libappstream-glib
 Requires:       dnf5
 Requires:       rpm
-Recommends:     dnf5daemon-server
-Recommends:     polkit
 
 %description
-LGL DNF Helper is a Qt6 graphical utility for inspecting installed RPM
-packages, DNF5 dependency relationships, reverse dependencies, file
-ownership, related configuration, and repository origin.
+LGL DNF Helper is a graphical utility for inspecting installed RPM packages,
+DNF5 dependency relationships, reverse dependencies, file ownership, related
+configuration, and repository origin.
 
-The initial version is read-only and does not run the GUI as root.
+It is read-only and does not run as root.
 
 %prep
 %autosetup -n %{name}-%{version}
 
 %build
-mkdir -p build
-cd build
-cmake .. \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=%{_prefix}
-%make_build
+%cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+%cmake_build
 
 %install
-install -Dm755 build/lgl-dnf-helper \
-    %{buildroot}%{_bindir}/lgl-dnf-helper
+%cmake_install
 
-install -Dm644 data/lgl-dnf-helper.desktop \
-    %{buildroot}%{_datadir}/applications/lgl-dnf-helper.desktop
-
-install -Dm644 resources/icons/lgl-dnf-helper-icon.png \
-    %{buildroot}%{_datadir}/icons/hicolor/512x512/apps/lgl-dnf-helper.png
-
-install -Dm644 packaging/com.linuxgamerlife.lgl-dnf-helper.metainfo.xml \
+desktop-file-validate \
+    %{buildroot}%{_datadir}/applications/com.linuxgamerlife.lgl-dnf-helper.desktop
+appstream-util validate-relax --nonet \
     %{buildroot}%{_datadir}/metainfo/com.linuxgamerlife.lgl-dnf-helper.metainfo.xml
 
-%post
-if [ -x /usr/bin/gtk-update-icon-cache ]; then
-    gtk-update-icon-cache -f -t %{_datadir}/icons/hicolor &>/dev/null || :
-fi
-if [ -x /usr/bin/update-desktop-database ]; then
-    update-desktop-database -q %{_datadir}/applications &>/dev/null || :
-fi
-if [ -x /usr/bin/appstreamcli ]; then
-    appstreamcli refresh --force &>/dev/null || :
-fi
-if [ -x /usr/bin/kbuildsycoca6 ]; then
-    kbuildsycoca6 &>/dev/null || :
-fi
-
-%postun
-if [ -x /usr/bin/gtk-update-icon-cache ]; then
-    gtk-update-icon-cache -f -t %{_datadir}/icons/hicolor &>/dev/null || :
-fi
-if [ -x /usr/bin/update-desktop-database ]; then
-    update-desktop-database -q %{_datadir}/applications &>/dev/null || :
-fi
-if [ -x /usr/bin/appstreamcli ]; then
-    appstreamcli refresh --force &>/dev/null || :
-fi
+%check
+%ctest
 
 %files
 %license LICENSE
-%doc README.md
+%doc README.md CHANGELOG.md HELP.html
 %{_bindir}/lgl-dnf-helper
-%{_datadir}/applications/lgl-dnf-helper.desktop
-%{_datadir}/icons/hicolor/512x512/apps/lgl-dnf-helper.png
+%{_datadir}/applications/com.linuxgamerlife.lgl-dnf-helper.desktop
 %{_datadir}/metainfo/com.linuxgamerlife.lgl-dnf-helper.metainfo.xml
+%{_datadir}/icons/hicolor/48x48/apps/%{name}.png
+%{_datadir}/icons/hicolor/64x64/apps/%{name}.png
+%{_datadir}/icons/hicolor/128x128/apps/%{name}.png
+%{_datadir}/icons/hicolor/256x256/apps/%{name}.png
 
 %changelog
+* Mon Oct 19 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 2.0.0-1
+- Migrate to GTK 4 (gtkmm) and adopt the LGL GTK app standard
+- Follow the desktop theme live: palette, light/dark, accent, fonts
+- Add a header bar, a main menu that opens with Alt, a system title bar mode
+  (Ctrl+Shift+M), HTML Help with native tables and package badges (F1/Escape),
+  and Ctrl+F to focus search
+- List build dependencies as Build Requires instead of Requires (#6)
+- Show the dependencies of one build instead of every version and architecture
+- Always include partial name matches in search
+- Split config into System Config and User Config tabs without repeated rows
+- Show the full command line, action and version change in History
+- Open the providing package when a dependency capability is double-clicked
+- Remove Back and Forward navigation
+- Stop looking up rpmlib(...) and config(...) capabilities as packages
+- Count every dependent package in Impact and correct the leaf package check
+- Do not show "(none)" in versions of packages found by file path
+- Install the icon at 48, 64, 128 and 256 px and rename the desktop file to
+  com.linuxgamerlife.lgl-dnf-helper.desktop
+
 * Sun Aug 16 2026 LinuxGamerLife <contact@linuxgamerlife.com> - 1.0.0-1
 - Add sortable package and detail tables
 - Add a resizable separator between installed and all-package results

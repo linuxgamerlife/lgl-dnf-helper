@@ -1,0 +1,208 @@
+/* LGL DNF Helper (GTK): follows the desktop theme.
+
+   Colours come from libadwaita's named colours, which libadwaita resolves from the desktop
+   (dark mode and accent colour) and which the user's ~/.config/gtk-4.0/gtk.css overrides
+   (Noctalia and similar generators); ThemeWatcher re-reads that file when it changes, so the
+   app re-themes live. Only the status colours are fixed, with light and dark variants
+   switched by the .dark class on the main window. Loaded at APPLICATION priority, so the
+   user's gtk.css still wins. */
+
+@define-color dh_bg @window_bg_color;
+@define-color dh_fg @window_fg_color;
+@define-color dh_accent @accent_bg_color;
+@define-color dh_on_accent @accent_fg_color;
+@define-color dh_surface color-mix(in srgb, @dh_fg 4%, @dh_bg);
+@define-color dh_sunken color-mix(in srgb, @dh_fg 2%, @dh_bg);
+@define-color dh_border color-mix(in srgb, @dh_fg 16%, @dh_bg);
+@define-color dh_hover color-mix(in srgb, @dh_fg 8%, @dh_bg);
+@define-color dh_muted color-mix(in srgb, @dh_fg 68%, @dh_bg);
+
+@define-color dh_negative #b42318;
+@define-color dh_neutral #a15c07;
+@define-color dh_positive #067647;
+@define-color dh_negative_dark #f97066;
+@define-color dh_neutral_dark #fdb022;
+@define-color dh_positive_dark #47cd89;
+
+/* --- type ------------------------------------------------------------------- */
+
+/* Font families for these classes are also set from the desktop monospace font. */
+.mono, .wordmark, .section-label, .dh-chip {
+  font-family: "Adwaita Mono", "JetBrains Mono", monospace;
+}
+.mono { font-feature-settings: "tnum"; }
+.muted { color: @dh_muted; }
+.small { font-size: 0.85em; }
+
+.section-label {
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: @dh_muted;
+}
+
+.package-title {
+  font-size: 1.25em;
+  font-weight: 700;
+}
+
+.setup-title {
+  font-size: 1.2em;
+  font-weight: 700;
+}
+
+/* --- brand ------------------------------------------------------------------ */
+
+.wordmark {
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+/* --- layout ----------------------------------------------------------------- */
+
+/* Square window corners (libadwaita's default is 15px). Compositors that draw their own
+   rounded borders clip the window to them; rounding here as well leaves a gap where the
+   two radii differ. */
+:root { --window-radius: 0px; }
+
+.body { padding: 12px; }
+
+.dh-card {
+  background-color: @dh_surface;
+  border: 1px solid @dh_border;
+  border-radius: 10px;
+  padding: 14px;
+}
+.dh-card.flush { padding: 0; }
+.dh-card .card-head { padding: 12px 14px 8px 14px; }
+
+paned.body-paned > separator {
+  min-width: 12px;
+  min-height: 12px;
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+
+.dialog-body { padding: 18px; }
+
+/* --- buttons ---------------------------------------------------------------- */
+
+button.dh-primary {
+  background-image: none;
+  background-color: @dh_accent;
+  color: @dh_on_accent;
+  border-color: @dh_accent;
+  font-weight: 600;
+}
+button.dh-primary:hover { background-color: color-mix(in srgb, @dh_accent 85%, @dh_fg); }
+button.dh-primary:disabled { opacity: 0.45; }
+
+/* --- tables ----------------------------------------------------------------- */
+
+columnview.data-table { background: none; }
+columnview.data-table > listview { background: none; }
+columnview.data-table > listview > row:nth-child(even) { background-color: @dh_sunken; }
+columnview.data-table > listview > row:hover { background-color: @dh_hover; }
+columnview.data-table > listview > row:selected {
+  background-color: color-mix(in srgb, @dh_accent 22%, transparent);
+  color: @dh_fg;
+}
+columnview.data-table > listview > row > cell { padding: 5px 8px; }
+.link-cell { color: @accent_color; }
+.table-empty { padding: 24px; }
+
+/* The detail tabs sit on the window; their pages draw on the card surface. */
+notebook.detail-tabs > stack {
+  background-color: @dh_surface;
+}
+notebook.detail-tabs > stack paned.body-paned { padding: 12px; }
+
+textview.description-view,
+textview.description-view > text { background: none; color: @dh_fg; }
+textview.log-view,
+textview.log-view > text { background-color: @dh_sunken; color: @dh_fg; }
+
+/* --- status: chips and notices ---------------------------------------------- */
+
+.dh-chip {
+  padding: 1px 8px;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+  font-size: 0.78em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.dh-chip.positive { color: @dh_positive; background-color: alpha(@dh_positive, 0.12); }
+.dh-chip.neutral { color: @dh_neutral; background-color: alpha(@dh_neutral, 0.12); }
+.dh-chip.negative { color: @dh_negative; background-color: alpha(@dh_negative, 0.12); }
+window.dark .dh-chip.positive { color: @dh_positive_dark; background-color: alpha(@dh_positive_dark, 0.12); }
+window.dark .dh-chip.neutral { color: @dh_neutral_dark; background-color: alpha(@dh_neutral_dark, 0.12); }
+window.dark .dh-chip.negative { color: @dh_negative_dark; background-color: alpha(@dh_negative_dark, 0.12); }
+
+.dh-notice {
+  margin: 0 0 16px 0;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid @dh_border;
+  background-color: @dh_surface;
+  color: @dh_fg;
+  box-shadow: 0 2px 10px alpha(black, 0.18);
+}
+.dh-notice.positive {
+  color: @dh_positive;
+  border-color: color-mix(in srgb, @dh_positive 45%, @dh_bg);
+  background-color: color-mix(in srgb, @dh_positive 8%, @dh_bg);
+}
+.dh-notice.neutral {
+  color: @dh_neutral;
+  border-color: color-mix(in srgb, @dh_neutral 45%, @dh_bg);
+  background-color: color-mix(in srgb, @dh_neutral 8%, @dh_bg);
+}
+.dh-notice.negative {
+  color: @dh_negative;
+  border-color: color-mix(in srgb, @dh_negative 45%, @dh_bg);
+  background-color: color-mix(in srgb, @dh_negative 8%, @dh_bg);
+}
+window.dark .dh-notice.positive {
+  color: @dh_positive_dark;
+  border-color: color-mix(in srgb, @dh_positive_dark 45%, @dh_bg);
+  background-color: color-mix(in srgb, @dh_positive_dark 8%, @dh_bg);
+}
+window.dark .dh-notice.neutral {
+  color: @dh_neutral_dark;
+  border-color: color-mix(in srgb, @dh_neutral_dark 45%, @dh_bg);
+  background-color: color-mix(in srgb, @dh_neutral_dark 8%, @dh_bg);
+}
+window.dark .dh-notice.negative {
+  color: @dh_negative_dark;
+  border-color: color-mix(in srgb, @dh_negative_dark 45%, @dh_bg);
+  background-color: color-mix(in srgb, @dh_negative_dark 8%, @dh_bg);
+}
+
+/* --- help ------------------------------------------------------------------- */
+
+textview.help-view,
+textview.help-view > text {
+  background-color: @dh_bg;
+  color: @dh_fg;
+}
+
+grid.help-table {
+  margin: 4px 0 10px;
+  background-color: @dh_surface;
+  border: 1px solid @dh_border;
+  border-radius: 6px;
+  overflow: hidden;
+}
+label.help-table-cell {
+  padding: 6px 10px;
+  border-bottom: 1px solid @dh_border;
+}
+label.help-table-heading {
+  font-weight: 600;
+  background-color: @dh_sunken;
+}
+label.help-table-first-column {
+  border-right: 1px solid @dh_border;
+}

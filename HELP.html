@@ -1,0 +1,93 @@
+<article>
+  <h1>LGL DNF Helper</h1>
+  <p>LGL DNF Helper is a read-only guide to the RPM packages on your Fedora system. Find what a package needs, what needs it, which files and config it owns, where it came from, and how risky it may be to remove.</p>
+  <p>It reads information through <code>dnf5</code> and <code>rpm</code>; it never installs, removes, or updates packages. Run it as your normal user, not with <code>sudo</code>.</p>
+  <p>The app follows your desktop's GTK theme, including light or dark mode, the accent colour, and the monospace font. Theme changes apply while the app is open.</p>
+
+  <h2>Getting started</h2>
+  <ol>
+    <li>Type a package name, command, capability, partial name, or file path in the search field.</li>
+    <li>Press <code>Enter</code> or choose <strong>Search</strong>.</li>
+    <li>Choose a result to open its details.</li>
+  </ol>
+
+  <h3>Header bar</h3>
+  <ul>
+    <li><strong>Reset</strong> clears the search, results, selected package, and log.</li>
+    <li>The status chip shows <strong>READY</strong>, <strong>QUERYING</strong>, <strong>ERROR</strong>, or <strong>SETUP NEEDED</strong>.</li>
+  </ul>
+  <p>The main menu at the right of the header bar provides <strong>Clear Log</strong>, <strong>Use System Title Bar</strong>, <strong>Help</strong>, <strong>About LGL DNF Helper</strong>, and <strong>Quit</strong>. Tap <code>Alt</code> or press <code>F10</code> to open or close it from the keyboard.</p>
+  <p><strong>Use System Title Bar</strong> lets your compositor draw the title bar. Choose it again, or press <code>Ctrl+Shift+M</code>, to return to the app title bar. The app remembers the choice.</p>
+
+  <h3>Keyboard shortcuts</h3>
+  <table>
+    <tr><th>Shortcut</th><th>Action</th></tr>
+    <tr><td>Enter</td><td>Search in the search field; open a selected result or dependency.</td></tr>
+    <tr><td>Ctrl+F</td><td>Move to the search field.</td></tr>
+    <tr><td>Menu or Shift+F10</td><td>Open the selected table row's menu.</td></tr>
+    <tr><td>Alt or F10</td><td>Open or close the main menu.</td></tr>
+    <tr><td>Ctrl+Shift+M</td><td>Use System Title Bar on or off.</td></tr>
+    <tr><td>F1</td><td>Open or close this help.</td></tr>
+    <tr><td>Escape</td><td>Close this help.</td></tr>
+    <tr><td>Ctrl+Q</td><td>Quit.</td></tr>
+  </table>
+  <p>Short status messages appear at the bottom of the window and disappear on their own.</p>
+
+  <h2>Search</h2>
+  <p>Search combines these matches, in this order:</p>
+  <ol>
+    <li>An installed package with exactly that name.</li>
+    <li>Installed and available packages that provide that capability or command. Searching <code>dnf</code> finds the installed <code>dnf5</code>.</li>
+    <li>Package names that contain the text. Searching <code>kineticwe</code> also finds <code>kineticwe-noctalia</code> and <code>kineticwe-greeter</code>.</li>
+  </ol>
+  <p>Source packages are left out. A search beginning with <code>/</code> looks up the installed package that owns that file.</p>
+
+  <h3>Results</h3>
+  <ul>
+    <li><strong>Installed Packages</strong> lists matches installed on this system.</li>
+    <li><strong>All Packages</strong> lists every match with its version and architecture. Identical builds appear once.</li>
+  </ul>
+  <p>Searching only fills these lists. Choose a result, or select it and press <code>Enter</code>, to show its details.</p>
+
+  <h2>Package details</h2>
+  <p>The <strong>Selected Package</strong> card shows the package name, full version, and badges that sum it up.</p>
+
+  <h3>Package badges</h3>
+  <ul>
+    <li><span class="chip positive">Installed</span>: installed on this system.</li>
+    <li><span class="chip neutral">Available</span>: offered by an enabled repository, but not installed.</li>
+    <li><span class="chip neutral">Third-party</span>: from outside Fedora's own repositories, such as COPR, RPM Fusion, or a vendor repository.</li>
+    <li><span class="chip negative">System-sensitive</span>: a core system package. Take extra care before changing it.</li>
+  </ul>
+  <p>An installed package also shows why DNF installed it:</p>
+  <ul>
+    <li><span class="chip">User</span>: explicitly installed and kept until you remove it.</li>
+    <li><span class="chip">Dependency</span>: needed by another package; it may become an autoremove candidate.</li>
+    <li><span class="chip">Weak Dependency</span>: recommended by another package; it may become an autoremove candidate.</li>
+    <li><span class="chip">Group</span>: installed as part of a package group.</li>
+    <li><span class="chip">External User</span>: installed by something other than DNF, such as <code>rpm</code> or a software centre.</li>
+  </ul>
+
+  <h3>Detail tabs</h3>
+  <table>
+    <tr><th>Tab</th><th>What it shows</th></tr>
+    <tr><td>Overview</td><td>Package metadata and description. Drag the gap to resize the description.</td></tr>
+    <tr><td>Dependencies</td><td>Requirements, recommendations, provides, conflicts, and obsoletes. Double-click a row to open its provider.</td></tr>
+    <tr><td>Required By</td><td>Installed packages that depend on this one.</td></tr>
+    <tr><td>Files</td><td>Every file and folder from RPM's database. Available packages have no local file list.</td></tr>
+    <tr><td>System Config</td><td>Tracked config under /etc, including relevant direct dependencies.</td></tr>
+    <tr><td>User Config</td><td>Likely existing config, data, and cache folders in your home directory. These are informed guesses.</td></tr>
+    <tr><td>History</td><td>Transactions containing the package, including action, version change, and full command.</td></tr>
+    <tr><td>Repository</td><td>Package origin, other repository matches, and updates.</td></tr>
+    <tr><td>Impact</td><td>A read-only indication of how much the package is needed. It is not a removal preview.</td></tr>
+    <tr><td>Log</td><td>Every dnf5 and rpm command the app ran.</td></tr>
+  </table>
+
+  <h2>Tables</h2>
+  <p>Click a column heading to sort by it and drag its edge to resize it. Hover over a long value to see it in full.</p>
+  <p>Right-click a row, or press <code>Menu</code> or <code>Shift+F10</code>, to copy its cell, row, or table. URL rows can open in your browser, and path rows can open their containing folder.</p>
+
+  <h2>When DNF5 is missing</h2>
+  <p>If <code>dnf5</code> is not installed, the app opens a <strong>Setup</strong> tab and disables search. Install the tools with <code>sudo dnf install dnf5 rpm</code>, then start the app again.</p>
+  <p>Queries use DNF's cached metadata and do not download anything. If results look out of date, refresh the cache with <code>sudo dnf makecache</code>.</p>
+</article>

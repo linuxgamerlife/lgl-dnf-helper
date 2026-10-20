@@ -1,5 +1,35 @@
 # Changelog
 
+## v2.0.0 - 2026-10-19
+
+### Changed
+
+- Migrated from Qt 6 to GTK 4 (gtkmm) and adopted the LGL GTK app standard. The app follows the desktop theme live: palette, light or dark mode, accent colour, and monospace font.
+- Header bar with Reset, a status chip, and the main menu (Clear Log, Use System Title Bar, Help, About, Quit). Tap Alt or press F10 to open or close the menu.
+- Optional system title bar (Ctrl+Shift+M), remembered in `~/.config/lgl-dnf-helper/settings.ini`.
+- In-app HTML Help with clearer sections, native tables for shortcuts and detail tabs, and coloured package badges that match the selected-package card. Press `F1` again or `Escape` to close it.
+- New shortcuts: Ctrl+F to focus search, Menu or Shift+F10 for a table row's menu.
+- Removed Back and Forward navigation (the buttons, Alt+Left and Alt+Right, and the mouse back and forward buttons). Clicking a result or double-clicking a dependency opens it directly.
+- Status bar messages are now notices at the bottom of the window.
+- The Dependencies, Related Config, and Config tabs read one build of the package: the installed build, or else the latest available build for this architecture. They used to merge every version and architecture.
+- Search always includes packages whose names contain the text, even when an installed package has exactly that name (searching `kineticwe` also finds `kineticwe-noctalia`). Source packages are left out.
+- The config tabs are now **System Config** (the package's own `/etc` paths and its direct dependencies' config) and **User Config** (guessed home-folder paths only). The old Config tab repeated the Related Config rows.
+- History shows the full command line, the package's own action, and its version change, from dnf5's JSON output.
+- Double-clicking a dependency opens the package that provides it, so `/bin/sh` opens `bash` instead of failing.
+- The desktop file is now `com.linuxgamerlife.lgl-dnf-helper.desktop`; re-pin the app if you pinned it. Icons are installed at 48, 64, 128, and 256 px.
+- Builds come from the checked-out source (`make srpm`); COPR no longer needs a Git tag.
+
+### Fixed
+
+- Build dependencies were listed as Requires. They now appear as Build Requires and are no longer treated as direct dependencies by Related Config and Config (#6).
+- Impact counted at most one dependent package, because dnf5 printed the names on one line.
+- Impact reported every installed package as a leaf package.
+- Packages found by file path showed "(none)" in their version.
+- User cache guesses looked in an app-specific cache folder instead of `~/.cache`.
+- Double-clicking a result loaded the package twice.
+- Config lookups treated capabilities such as `rpmlib(PayloadIsZstd)` and `config(foot)` as packages named `rpmlib` and `config`, and ran one `rpm` call per dependency; they now use three calls in total.
+- History for an available package searched for its full NEVRA and found nothing.
+
 ## v1.0.0 - 2026-08-16
 
 ### Changed

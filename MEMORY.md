@@ -4,20 +4,54 @@ Use this file to resume context after compaction or token loss.
 
 ## Current Version
 
-- Version is `0.1.1` across all metadata.
-- Source is at the project root (no versioned subdirectory).
+- Version is `2.0.0` (GTK 4 migration) across `packaging/lgl-dnf-helper.spec`,
+  `gtk/CMakeLists.txt`, the metainfo `<releases>`, `CHANGELOG.md` and the README.
+- The packaged app is the GTK 4 (gtkmm + libadwaita) build in `gtk/`, following
+  `/development/projects/docs/gtk-desktop-application-standard.md`. Reference apps:
+  lgl-papercutter, lgl-emoji-picker, lgl-colour-picker.
+- The Qt 6 sources in `src/` are kept for reference only and are not built.
 
-Build commands:
+Build commands (inside the `fedora-dev1` distrobox, where this repo is at
+`/run/host/development/projects/lgl-dnf-helper`):
 
 ```bash
-cd /development/projects/lgl-dnf-helper
-cmake -B build -DCMAKE_BUILD_TYPE=Debug
-cmake --build build
+cmake -B build-gtk -G Ninja -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
+cmake --build build-gtk
+ctest --test-dir build-gtk
+DNFHELPER_GTK_SNAPSHOT=/tmp/snap ./build-gtk/lgl-dnf-helper   # render and quit
+make srpm                                                       # SRPM into result/
 ```
+
+## GTK Layout
+
+- `gtk/src/core/` (no widgets, tested): `package` (models, badges, file types),
+  `parsers` (dnf5/rpm output), `commandrunner` (Gio::Subprocess, 30 s timeout),
+  `backend` (all queries, sigc signals), `settings`, `theme`.
+- `gtk/src/ui/`: `window` (main window), `datatable` (ColumnView table with sort and
+  context menu), `helpwindow` (HELP.html), `themewatcher`.
+- Namespace `dnfhelper`, CSS prefix `dh-`/`dh_`, GResource `/com/linuxgamerlife/dnfhelper/`.
+- Shortcuts beyond the standard: Ctrl+F (focus search). Ctrl+R was rejected (means reload
+  elsewhere, and Reset is destructive).
+- Back/Forward navigation (buttons, Alt+Left/Right, mouse buttons) was removed at the
+  user's request on 2026-10-19. Clicking a result opens it; double-clicking a dependency
+  opens its provider.
+- Recorded deviation: the Search button sits in the body beside the search field.
+
+## dnf5 Gotchas (found during the GTK port)
+
+- `repoquery --requires <name>` merges every version, arch and the `.src` package, whose
+  Requires are BuildRequires (issue #6). The backend scopes queries: `--installed` when
+  installed, else `--available --latest-limit=1 --arch=<native>,noarch` (no arch filter
+  for an exact NEVRA). Build Requires come from the source package named by
+  `%{sourcerpm}` (`libdnf5` is built from `dnf5`).
+- `--queryformat=%{name}` has no newline; always use `%{name}\n`.
+- `--leaves <name>` computes leaves within the filtered set, so it always matches. List
+  all leaves (and unneeded) and look the package up.
+- `rpm --qf %{EPOCH}` prints `(none)`; the parser maps `(none)` to empty.
 
 ## Product Direction
 
-- Read-only Qt6/C++ Fedora package inspection app.
+- Read-only GTK 4/C++ Fedora package inspection app.
 - Do not run GUI as root.
 - Do not install/remove/update packages.
 - Prefer practical, dense system-utility UI.
@@ -26,7 +60,7 @@ cmake --build build
 ## Recent UI Decisions
 
 - Header button is `Reset`, not `Refresh`.
-- Reset clears search, package results, selected package, tables, description, navigation history, and log.
+- Reset clears search, package results, selected package, tables, description, and log.
 - Search results area is split into:
   - `Installed Packages`
   - `All Packages`
@@ -34,6 +68,10 @@ cmake --build build
 - `All Packages` shows `Package`, `Version`, and `Architecture`.
 - `All Packages` deduplicates identical NEVRA rows so installed and available copies of the same package/version/arch do not appear twice.
 - Search must only populate the left result sections. It must not auto-open package details, even if there is one result.
+- History uses `dnf5 history list/info --json` for the full command line.
+- Dependency config: `--requires` names (skipping namespaced capabilities such as
+  `rpmlib(...)`, `config(...)`, `perl(...)`), filtered to installed with one dnf5 call, then
+  one `rpm -q --qf '[%{=NAME}\t%{FILEFLAGS:fflags}\t%{FILENAMES}\n]'` call.
 - Package details load only when the user clicks or double-clicks a result.
 - Overview has a resizable description area using a vertical `QSplitter`.
 - Right-click menu no longer has `Inspect Selected Package/Capability`.
@@ -43,14 +81,13 @@ cmake --build build
 
 ## Search Behavior
 
-Current search fallback order:
+Search runs all of these together and merges them in this order (since 2.0.0; before, it
+stopped at the first that matched, so `kineticwe` hid `kineticwe-noctalia`):
 
 1. Exact installed package query.
 2. Installed provider/capability query.
 3. Available provider/capability query.
-4. Fuzzy package-name query using `*term*`.
-
-This was added so searching `noctalia` can find `noctalia-shell`.
+4. Fuzzy package-name query using `*term*`, installed and available. `.src` results dropped.
 
 Important: provider lookup must check installed providers first. Example:
 
@@ -61,18 +98,14 @@ Important: provider lookup must check installed providers first. Example:
 
 ## Config Behavior
 
-- `Config` tab now shows:
-  - package-owned `/etc` config paths,
-  - guessed user XDG config/data/cache paths,
-  - config owned by direct dependency packages.
-- This was restored because `dnf5` users expect `/etc/dnf/dnf.conf` to appear when inspecting `dnf5`, even though the file is actually owned by `libdnf5`.
-- Example:
-  - `rpm -qf /etc/dnf/dnf.conf` returns `libdnf5`.
-  - `rpm -qc libdnf5` returns `/etc/dnf/dnf.conf`.
-  - In `dnf5` Config tab it should show as `Related Config`, owned by direct dependency `libdnf5`.
-- `Files` and `Config` RPM calls must normalize selected available-package NEVRAs back to package name before calling RPM.
-  - Bad: `rpm -ql dnf5-5.2.17.0-2.fc43.x86_64`
-  - Good: `rpm -ql dnf5`
+- `System Config` tab: the package's own `/etc` paths (from `rpm -ql`, installed packages
+  only) plus `rpm -qc` config of its direct runtime dependencies. `dnf5` shows
+  `/etc/dnf/dnf.conf` via `libdnf5` here.
+- `User Config` tab: only guessed home-folder paths (XDG config/data/cache) that exist.
+  Uses `rpm -ql` names when installed, else the package name alone.
+- Until 2.0.0 the Config tab repeated the Related Config rows; the user asked for one tab
+  to be user config only.
+- `Files` and config RPM calls normalise an available package's NEVRA to its name.
 
 ## Known Examples
 
@@ -90,33 +123,27 @@ Important: provider lookup must check installed providers first. Example:
 
 ## Important Files
 
-- UI: `src/ui/MainWindow.cpp`
-- UI declarations: `src/ui/MainWindow.h`
-- Backend: `src/backend/Dnf5CliBackend.cpp`
-- Process wrapper: `src/backend/Dnf5Process.cpp`
-- Models: `src/model/`
-- Version metadata:
-  - `CMakeLists.txt`
-  - `src/main.cpp`
-  - `src/ui/MainWindow.cpp` About dialog
-  - `packaging/lgl-dnf-helper.spec`
-  - `packaging/com.linuxgamerlife.lgl-dnf-helper.metainfo.xml`
-  - `CHANGELOG.md`
+- UI: `gtk/src/ui/window.cpp`, tables in `gtk/src/ui/datatable.cpp`
+- Backend: `gtk/src/core/backend.cpp`, parsing in `gtk/src/core/parsers.cpp`
+- Process runner: `gtk/src/core/commandrunner.cpp`
+- Help text: `HELP.html` (bundled, F1)
+- Version metadata: see Current Version above.
 
 ## Release Status
 
-- v0.1.0 released 2026-05-08. Published to COPR and GitHub.
-- v0.1.1 in progress (icon update). Not yet tagged or published.
+- v1.0.0 released 2026-08-16 (last Qt release).
+- v2.0.0 (GTK 4 migration, fixes issue #6) prepared 2026-10-19. Not yet committed,
+  tagged or published.
 
 ## COPR
 
 Project: `linuxgamerlife/lgl-dnf-helper`
 
-**ACTION REQUIRED**: COPR SCM subdirectory was previously set to `v0.1.0`. That directory no longer exists — source is now at the repo root. Update COPR project SCM settings: clear subdirectory to `/` or leave blank.
-
 Spec path: `packaging/lgl-dnf-helper.spec`
 
-Source0 uses a remote GitHub tar.gz URL — rpkg downloads it, does not use git archive. Source0 was changed from `.zip` to `.tar.gz` in v0.1.1.
+COPR builds with the `make_srpm` SCM method: `.copr/Makefile` includes the root
+`Makefile`, which archives the checked-out tree as `Source0` (`lgl-dnf-helper-<version>.tar.gz`).
+No Git tag or remote tarball is needed.
 
 Install instructions:
 ```bash
